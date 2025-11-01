@@ -1,0 +1,15 @@
+numpy
+groq
+duckduckgo-search
+```
+
+---
+
+## 📁 Final Folder Structure:
+```
+MAJOR PR.../
+├── __pycache__/
+├── gs_agent.py          ✅ MODIFIED (added wrapper function)
+├── gs_solver.py         ✅ NO CHANGES
+├── websearch_agent.py   ⭐ NEW FILE
+├── orchestrator.py      ⭐ NEW FILE
