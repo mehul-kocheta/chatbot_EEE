@@ -1,41 +1,89 @@
 # orchestrator.py
 from gs_agent import run_power_flow_agent
 from websearch_agent import run_websearch_agent
+from loss_agent import run_loss_agent
+from dotenv import load_dotenv
+import os
+from groq import Groq
 
-# Add or update these keywords as needed for power system queries
-POWERFLOW_KEYWORDS = [
-    "bus voltage", "ybus", "admittance matrix", "power flow", "gauss-seidel", "power system", "load flow", "transmission line",
-    "node voltage", "power injections", "bus current", "slack bus", "PQ bus", "PV bus", "bus impedance"
+agent = Groq()
+
+load_dotenv()
+
+tools = [
+  {
+    "type": "function",
+    "function": {
+      "name": "route_query",
+      "description": "Routes the query to either the power_flow or web_search handler based on the type",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["power_flow", "web_search", "loss_calculation_new_load"],
+            "description": "The target handler for the query"
+          },
+          "query": {
+            "type": "string",
+            "description": "The actual query to be processed"
+          }
+        },
+        "required": ["type", "query"]
+      }
+    }
+  }
 ]
 
 def classify_query(user_query):
     """Classify user query using simple keyword-based method."""
-    query_lower = user_query.lower()
-    for kw in POWERFLOW_KEYWORDS:
-        if kw in query_lower:
-            return "POWERFLOW"
-    return "WEBSEARCH"
+    respone = agent.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are an expert agent that determines whether a user query "
+                    "is related to POWERFLOW analysis or a GENERAL WEB SEARCH. "
+                    "Call the route_query tool with type = 'power_flow' for questions about power flow analysis like solving the Ybus for volatage at each bus,"
+                    "Call the route_query tool with type = 'loss_calculation_new_load' for questions about calculating power system losses after adding new loads,"
+                    "bus voltages, admittance matrices, or similar topics. "
+                    "Respond with 'web_search' for all other general knowledge queries."
+                    "Else for small talk and greetings, never call any tool and just respond accordingly."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"{user_query}"
+            }
+        ],
+        tools=tools,
+        max_tokens=2000,
+        stream=False
+    )
+    
+    if respone.choices[0].message.tool_calls:
+        tool_response = respone.choices[0].message.tool_calls[0]
+        if tool_response.name == "route_query":
+            arguments = tool_response.arguments
+            return arguments['type'], arguments['query']
+        else:
+            return {"error": "Unexpected tool call"}
+    else:
+        return respone.choices[0].message.content.strip(), None
 
 def orchestrate(user_query):
-    print("\nOrchestrator: Analyzing your query...")
-    agent_type = classify_query(user_query)
-    print(f"Routing to {agent_type} Agent.")
-    print("="*60)
-    if agent_type == "POWERFLOW":
-        print("Power Flow Agent is processing your request...\n" + "="*60)
-        return run_power_flow_agent(user_query)
+    answer, query = classify_query(user_query)
+    if answer == "power_flow":
+        return run_power_flow_agent(query)
+    elif answer == "web_search":
+        return run_websearch_agent(query)
     else:
-        print("Web Search Agent is processing your request...\n" + "="*60)
-        return run_websearch_agent(user_query)
+        return answer
 
 def main():
-    print("="*60)
-    print("MULTI-AGENT ORCHESTRATOR")
-    print("="*60)
-    print("Capabilities:\n- Power Flow Analysis (Ybus, Bus Voltages, etc.)\n- Web Search (General questions)")
-    print("="*60)
     while True:
-        user_query = input("Enter your query (or 'quit' to exit): ").strip()
+        user_query = input("User: ")
         if user_query.lower() in ['quit', 'exit', 'q']:
             print("Goodbye!")
             break
@@ -44,11 +92,7 @@ def main():
             continue
         try:
             result = orchestrate(user_query)
-            print("="*60)
-            print("RESULT")
-            print("="*60)
-            print(result)
-            print("="*60)
+            print(f"Response: {result}\n")
         except Exception as e:
             print(f"Error: {str(e)}")
 

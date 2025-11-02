@@ -1,17 +1,22 @@
 from ddgs import DDGS
 from groq import Groq
 import json
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Initialize Groq client and model same as gs_agent.py
 client = Groq()
 MODEL = "openai/gpt-oss-120b"  # Use same model as gs_agent
 
-def search_web(query, num_results=5):
+def search_web(query, num_results=20):
     """Search the web using DuckDuckGo API (ddgs)."""
     try:
         results = []
         with DDGS(timeout=20) as ddgs:
             for result in ddgs.text(query, max_results=num_results):
+                # print(result)
                 results.append({
                     'title': result.get('title', ''),
                     'url': result.get('href', ''),

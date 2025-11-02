@@ -2,6 +2,11 @@ import numpy as np
 import json
 # Assume the following imports and setups are done:
 from groq import Groq
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 client = Groq()
 MODEL = "openai/gpt-oss-120b"  # or the appropriate model name
 
@@ -179,11 +184,6 @@ def run_conversation(user_prompt):
         return second_response.choices[0].message.content
     else:
         return response_message.content
-
-# Example usage to ask user for input
-if __name__ == "__main__":
-    user_input = input("Provide the Ybus matrix and P (e.g., 'Ybus: [[1-1j, -1+1j], [-1+1j, 1-1j]], P: [0.5+0j, -0.3+0j]'): ")
-    print(run_conversation(user_input))
 
 def run_power_flow_agent(user_prompt):
     """
