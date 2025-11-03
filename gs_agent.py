@@ -11,7 +11,7 @@ client = Groq()
 MODEL = "openai/gpt-oss-120b"  # or the appropriate model name
 
 def gauss_seidel_loadflow(Ybus, bus_type, p_spec, q_spec, q_min, q_max, 
-                          V_init, tol=1e-4, max_iter=100):
+                          V_init, tol=1e-6, max_iter=100):
     """
     Python version of MATLAB Gauss–Seidel load flow solver supporting PV and PQ buses.
 
@@ -181,7 +181,7 @@ def run_conversation(user_prompt):
                         },
                         "tol": {
                             "type": "number",
-                            "description": "Tolerance for convergence of the iterative method (default 1e-4)."
+                            "description": "Tolerance for convergence of the iterative method (default 1e-6)."
                         },
                         "max_iter": {
                             "type": "integer",

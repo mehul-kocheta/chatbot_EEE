@@ -63,7 +63,7 @@ def classify_query(user_query, image_base64=None, conversation_history=None):
                 "is related to POWERFLOW analysis or a GENERAL WEB SEARCH. "
                 "If an image is provided, analyze it and use it to help classify the query. "
                 "Use the conversation history to understand context and follow-up questions. "
-                "Call the route_query tool with type = 'power_flow' for questions about power flow analysis like solving the Ybus for volatage at each bus,"
+                "Call the route_query tool with type = 'power_flow' for questions about power flow analysis like solving the Ybus for volatage at each bus, when you are giving query ensure that all the data is in the query itself and not in the conversation history."
                 "bus voltages, admittance matrices, or similar topics. "
                 "Call the route_query tool with type = 'web_search' for all other general knowledge questions, "
                 "Else for small talk and greetings, never call any tool and just respond accordingly."
