@@ -14,8 +14,15 @@ def get_fault_analysis_matlab(bus_matrix_np, is_zbus, v_pre_np, fault_bus_py):
     Returns:
         Tuple of (v_post, i_fault, i_post_inject) as numpy arrays
     """
+    import os
+    
     # Start MATLAB engine
     eng = matlab.engine.start_matlab()
+    
+    # Add matlab_scripts directory to MATLAB path
+    project_dir = os.path.dirname(os.path.realpath(__file__))
+    matlab_scripts_dir = os.path.join(project_dir, 'matlab_scripts')
+    eng.addpath(matlab_scripts_dir, nargout=0)
     
     # Convert numpy arrays to MATLAB arrays
     bus_matrix_m = matlab.double(

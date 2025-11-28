@@ -1,4 +1,4 @@
-from fault_agent import run_conversation
+from agents.fault_agent import run_conversation
 
 prompt = """
 Calculate v at each bus

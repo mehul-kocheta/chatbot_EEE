@@ -3,9 +3,10 @@ import json
 from groq import Groq
 from dotenv import load_dotenv
 import os
-from gs_agent import run_gs_agent
-from loss_agent import run_loss_agent
-from fault_agent import run_fault_agent
+from .gs_agent import run_gs_agent
+from .loss_agent import run_loss_agent
+from .fault_agent import run_fault_agent
+from .ybus_agent import run_ybus_agent
 
 load_dotenv()
 
@@ -18,16 +19,23 @@ def run_conversation(user_prompt):
         {
             "role": "system",
             "content": """You are a comprehensive power system analysis assistant. You can:
-            1. Solve power flow using Gauss-Seidel method to find bus voltages
-            2. Calculate total system losses after adding new loads
-            3. Find after fault voltages and currents for 3 phase bolted faults
+            1. Calculate Ybus matrix from branch/line data (resistance, reactance, transformer ratio, shunt admittance)
+            2. Solve power flow using Gauss-Seidel method to find bus voltages
+            3. Calculate total system losses after adding new loads
+            4. Find after fault voltages and currents for 3 phase bolted faults
             
-            Parse the user's input and determine which tool(s) to use. You can use both tools in sequence if needed.
-            For example, if user wants to know system losses after adding a new load, first solve power flow using
-            Gauss-Seidel, then use those voltages to calculate losses.
+            Parse the user's input and determine which tool(s) to use. You can use multiple tools in sequence if needed.
+            For example, if user provides branch data and wants power flow solution:
+            - First use Ybus agent to calculate the bus admittance matrix
+            - Then use Gauss-Seidel agent with that Ybus to find voltages
             
-            or if user wants to find after fault voltages/currents, first solve power flow to get pre-fault voltages,
-            then use those voltages for fault analysis.
+            If user wants to know system losses after adding a new load:
+            - First solve power flow using Gauss-Seidel
+            - Then use those voltages to calculate losses
+            
+            If user wants to find after fault voltages/currents:
+            - First solve power flow to get pre-fault voltages
+            - Then use those voltages for fault analysis
             
             Output your answer in pure markdown format, no latex equations.
             
@@ -41,6 +49,23 @@ def run_conversation(user_prompt):
     
     # Define the available tools for our model to use
     tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "run_ybus_calculation_agent",
+                "description": "Calculate Ybus matrix from branch/line data using MATLAB. Takes branch data with from bus, to bus, resistance, reactance, transformer ratio, and shunt admittance.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The query for Ybus calculation containing branch data in the format 'Branch data: from-to-R-X-a-shunt for each branch'"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        },
         {
             "type": "function",
             "function": {
@@ -96,6 +121,7 @@ def run_conversation(user_prompt):
 
     # Define available tools mapping
     available_functions = {
+        "run_ybus_calculation_agent": run_ybus_agent,
         "run_power_flow_agent": run_gs_agent,
         "run_loss_agent": run_loss_agent,
         "run_bolted_fault_agent": run_fault_agent

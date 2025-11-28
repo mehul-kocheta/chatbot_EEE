@@ -1,6 +1,6 @@
 # orchestrator.py
-from websearch_agent import run_websearch_agent
-from power_flow_agent import run_power_flow_agent
+from agents.websearch_agent import run_websearch_agent
+from agents.power_flow_agent import run_power_flow_agent
 from dotenv import load_dotenv
 import os
 from groq import Groq

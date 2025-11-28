@@ -37,10 +37,11 @@ def get_total_loss_matlab(ybus_np, v_np, new_load, bus_at_py):
         eng = matlab.engine.start_matlab()
         print("MATLAB engine started.")
         
-        # Add the current directory to the MATLAB path to find the .m file
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        eng.addpath(current_dir, nargout=0)
-        print(f"Added '{current_dir}' to MATLAB path.")
+        # Add the matlab_scripts directory to the MATLAB path to find the .m file
+        project_dir = os.path.dirname(os.path.realpath(__file__))
+        matlab_scripts_dir = os.path.join(project_dir, 'matlab_scripts')
+        eng.addpath(matlab_scripts_dir, nargout=0)
+        print(f"Added '{matlab_scripts_dir}' to MATLAB path.")
 
         # --- Data Conversion ---
         # 1. Convert Ybus to MATLAB complex double
