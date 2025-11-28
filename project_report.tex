@@ -4,6 +4,7 @@
 \usepackage{lmodern}
 \usepackage{geometry}
 \geometry{margin=1in}
+\setlength{\headheight}{14pt}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{fancyhdr}
@@ -19,6 +20,8 @@
 \usepackage{multicol}
 \usepackage{tikz}
 \usepackage{datetime}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 
 % Code listing style
 \lstset{
@@ -77,7 +80,7 @@ I hereby declare that this project report entitled \textbf{``Power System Analys
 \vspace{2cm}
 \begin{flushright}
     \textbf{Mehul} \\
-    Roll No: [Your Roll Number] \\
+    Roll No: 522206 \\
     Date: November 28, 2025
 \end{flushright}
 
@@ -118,25 +121,10 @@ Traditional power system software requires manual data entry and deep software k
 The system follows a hierarchical multi-agent architecture:
 
 \begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=2cm, every node/.style={rectangle, draw, rounded corners, minimum height=1cm, minimum width=3.5cm, align=center, fill=blue!10}]
-    \node (frontend) {Frontend Layer\\(Streamlit Web UI)};
-    \node (orch) [below of=frontend, yshift=-1cm] {Orchestrator Layer\\(orchestrator.py)\\LLM Query Classifier};
-    \node (pfagent) [below of=orch, xshift=-3cm, yshift=-1.5cm] {Power Flow Agent};
-    \node (webagent) [below of=orch, xshift=+3cm, yshift=-1.5cm] {Web Search Agent};
-    \node (subagents) [below of=pfagent, yshift=-1cm] {Specialized Sub-Agents\\(Ybus, Gauss-Seidel, Loss, Fault)};
-    \node (matlab) [below of=subagents, yshift=-1cm] {MATLAB Computation Layer};
-    \node (ddg) [right of=subagents, xshift=6cm] {DuckDuckGo API};
-
-    \draw[->] (frontend) -- (orch);
-    \draw[->] (orch) -| (pfagent);
-    \draw[->] (orch) -| (webagent);
-    \draw[->] (pfagent) -- (subagents);
-    \draw[->] (subagents) -- (matlab);
-    \draw[->] (webagent) -- (ddg);
-\end{tikzpicture}
-\caption{System Architecture Diagram}
-\end{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{architecture_major_project.png}
+    \caption{System Architecture Diagram}
+    \end{figure}
 
 \section{Key Components}
 
@@ -166,6 +154,328 @@ Uses DuckDuckGo API + LLM synthesis for general power system questions.
 
 \subsection{Frontend (\texttt{app.py})}
 Streamlit-based chat interface with image upload, history, and responsive design.
+
+\chapter{Agent Architecture and Workflows}
+
+\section{Detailed Agent Descriptions}
+
+\subsection{Orchestrator Agent}
+\textbf{File:} \texttt{orchestrator.py}
+
+\textbf{Purpose:} Central intelligence hub that classifies and routes all incoming queries.
+
+\textbf{Key Responsibilities:}
+\begin{itemize}
+    \item \textbf{Query Classification}: Uses Groq's Llama-4-Maverick model with tool calling to determine query type (power\_flow, web\_search, or small\_talk)
+    \item \textbf{Context Management}: Maintains conversation history across multiple turns
+    \item \textbf{Multimodal Processing}: Handles base64-encoded images alongside text inputs
+    \item \textbf{Agent Routing}: Dispatches queries to \texttt{power\_flow\_agent} or \texttt{websearch\_agent}
+    \item \textbf{Small Talk Handling}: Responds directly to greetings and casual conversation without invoking sub-agents
+\end{itemize}
+
+\textbf{Input Format:}
+\begin{itemize}
+    \item Text query (string)
+    \item Optional image (base64 encoded PNG/JPEG)
+    \item Conversation history (list of message objects)
+\end{itemize}
+
+\textbf{Output:} Routed response from appropriate agent or direct conversational reply.
+
+\subsection{Power Flow Agent}
+\textbf{File:} \texttt{agents/power\_flow\_agent.py}
+
+\textbf{Purpose:} Master coordinator for all power system analysis tasks.
+
+\textbf{Key Responsibilities:}
+\begin{itemize}
+    \item \textbf{Tool Orchestration}: Manages four specialized sub-agents via LLM tool calling
+    \item \textbf{Multi-step Planning}: Determines the sequence of operations needed (e.g., Ybus $\rightarrow$ GS $\rightarrow$ Loss)
+    \item \textbf{Data Flow Management}: Passes outputs from one agent as inputs to the next
+    \item \textbf{Result Synthesis}: Combines results from multiple agents into coherent markdown response
+    \item \textbf{Iterative Loop}: Supports up to 10 iterations for complex multi-step problems
+\end{itemize}
+
+\textbf{Available Tools:}
+\begin{enumerate}
+    \item \texttt{run\_ybus\_calculation\_agent}
+    \item \texttt{run\_power\_flow\_agent} (Gauss-Seidel)
+    \item \texttt{run\_loss\_agent}
+    \item \texttt{run\_bolted\_fault\_agent}
+\end{enumerate}
+
+\textbf{Model Used:} OpenAI GPT-OSS-120B via Groq
+
+\subsection{Ybus Agent}
+\textbf{File:} \texttt{agents/ybus\_agent.py}
+
+\textbf{Purpose:} Calculate bus admittance matrix from natural language branch descriptions.
+
+\textbf{Algorithm:}
+\begin{enumerate}
+    \item \textbf{NLP Parsing}: LLM extracts structured data from natural language:
+    \begin{itemize}
+        \item From bus, To bus (integer IDs)
+        \item Resistance $R$ (per unit)
+        \item Reactance $X$ (per unit)
+        \item Transformer ratio $a$ (default = 1)
+        \item Shunt admittance $y_{sh}$ (default = 0)
+    \end{itemize}
+    \item \textbf{Data Validation}: Ensures all required fields present
+    \item \textbf{MATLAB Engine Call}: Invokes \texttt{matlab.engine} with branch data
+    \item \textbf{Ybus Computation} (in MATLAB):
+    \begin{align*}
+        z_{ij} &= R_{ij} + jX_{ij} \\
+        Y_{ij} &= -\frac{1}{z_{ij} \cdot a_{ij}} \quad \text{(off-diagonal)} \\
+        Y_{ii} &= \sum_{j \neq i} \frac{1}{z_{ij} \cdot a_{ij}^2} + \frac{y_{sh,i}}{2} \quad \text{(diagonal)}
+    \end{align*}
+    \item \textbf{Result Conversion}: MATLAB matrix $\rightarrow$ NumPy array $\rightarrow$ formatted string
+\end{enumerate}
+
+\textbf{Output:} Complex-valued Ybus matrix in both rectangular and polar forms.
+
+\subsection{Gauss-Seidel Agent}
+\textbf{File:} \texttt{agents/gs\_agent.py}
+
+\textbf{Purpose:} Solve power flow equations iteratively to find bus voltages.
+
+\textbf{Algorithm:}
+\begin{enumerate}
+    \item \textbf{Input Parsing}: Extract $Y_{bus}$, bus types, $P_{spec}$, $Q_{spec}$, $V_{init}$
+    \item \textbf{Bus Classification}:
+    \begin{itemize}
+        \item Type 0: Slack bus (voltage fixed)
+        \item Type 1: PQ bus (P and Q specified)
+        \item Type 2: PV bus (P and $|V|$ specified)
+    \end{itemize}
+    \item \textbf{Iterative Update} (for each bus $j \neq$ slack):
+    \begin{itemize}
+        \item \textbf{PQ Bus:} 
+        \[V_j^{(k+1)} = \frac{1}{Y_{jj}} \left[ \frac{S_j^*}{(V_j^{(k)})^*} - \sum_{\substack{i=1\\i \neq j}}^{n} Y_{ji}V_i^{(k+1)} \right]\]
+        \item \textbf{PV Bus:}
+        \begin{enumerate}
+            \item Compute $Q_j$ from voltage and currents
+            \item Enforce limits: $Q_{min} \leq Q_j \leq Q_{max}$
+            \item Update $V_j$ using same formula as PQ
+            \item Re-normalize: $V_j^{(k+1)} = |V_{j,spec}| \cdot \frac{V_j^{(k+1)}}{|V_j^{(k+1)}|}$
+        \end{enumerate}
+    \end{itemize}
+    \item \textbf{Convergence Check}: $\max_j |V_j^{(k+1)} - V_j^{(k)}| < \epsilon$ (default $\epsilon = 10^{-6}$)
+    \item \textbf{Post-Processing}: Calculate $I = Y_{bus}V$, $S = V \odot I^*$, $P_{loss} = \sum \Re(S)$
+\end{enumerate}
+
+\textbf{Output:} Voltage vector, power injections, total system loss.
+
+\subsection{Loss Agent}
+\textbf{File:} \texttt{agents/loss\_agent.py}
+
+\textbf{Purpose:} Calculate total real power loss after adding a new load.
+
+\textbf{Algorithm:}
+\begin{enumerate}
+    \item \textbf{Input Parsing}: Extract $Y_{bus}$, voltage vector $V$, new load $S_{new}$, bus index
+    \item \textbf{Assumption Validation}: Assumes $V$ already includes the effect of new load (steady-state)
+    \item \textbf{MATLAB Computation}:
+    \begin{align*}
+        I &= Y_{bus} \cdot V \\
+        S_{inj} &= V \odot \overline{I} \\
+        P_{loss} &= \Re\left\{\sum_{i=1}^{n} S_{inj,i}\right\}
+    \end{align*}
+    \item \textbf{Result Return}: Total real power loss in per-unit or MW
+\end{enumerate}
+
+\textbf{Note:} The new load parameters are included in function signature but the actual computation uses only $Y_{bus}$ and final $V$.
+
+\subsection{Fault Agent}
+\textbf{File:} \texttt{agents/fault\_agent.py}
+
+\textbf{Purpose:} Analyze three-phase balanced fault at any bus.
+
+\textbf{Algorithm:}
+\begin{enumerate}
+    \item \textbf{Input Parsing}: Extract bus matrix (Ybus or Zbus), pre-fault voltages $V_{pre}$, fault bus $k$
+    \item \textbf{Matrix Conversion}: If Ybus provided, compute $Z_{bus} = Y_{bus}^{-1}$ in MATLAB
+    \item \textbf{Fault Current Calculation}:
+    \[I_{f} = \frac{V_{k,pre}}{Z_{kk}}\]
+    \item \textbf{Post-Fault Voltages}:
+    \[V_{i,post} = V_{i,pre} - Z_{ik} \cdot I_f \quad \forall i\]
+    \item \textbf{Post-Fault Currents}:
+    \[I_{post} = Y_{bus} \cdot V_{post}\]
+\end{enumerate}
+
+\textbf{Output:} Post-fault voltage vector, fault current magnitude, post-fault current injections.
+
+\subsection{Web Search Agent}
+\textbf{File:} \texttt{agents/websearch\_agent.py}
+
+\textbf{Purpose:} Answer general power system questions using web search.
+
+\textbf{Algorithm:}
+\begin{enumerate}
+    \item \textbf{Query Formulation}: Clean and format user query
+    \item \textbf{DuckDuckGo Search}: Fetch top 20 results via \texttt{ddgs} API
+    \item \textbf{Result Extraction}: Parse title, URL, snippet for each result
+    \item \textbf{LLM Synthesis}: Feed all snippets to Groq LLM with prompt:
+    \begin{quote}
+        ``Synthesize a comprehensive answer from these search results...''
+    \end{quote}
+    \item \textbf{Response Formatting}: Return markdown with sources
+\end{enumerate}
+
+\textbf{Fallback:} If LLM synthesis fails, return raw search results.
+
+\section{Complete System Workflow Algorithm}
+
+\begin{algorithm}[H]
+\caption{Power System Analysis Chatbot - Main Workflow}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} User query $q$, optional image $img$, conversation history $H$
+\STATE \textbf{Output:} System response $R$
+
+\STATE // \textbf{Stage 1: Frontend Processing}
+\IF{$img \neq \emptyset$}
+    \STATE Encode $img$ to base64 string $img_{b64}$
+\ENDIF
+\STATE Append $(q, img_{b64})$ to session state
+
+\STATE // \textbf{Stage 2: Orchestrator Classification}
+\STATE Prepare context: $C = [system\_prompt, H, q, img_{b64}]$
+\STATE Call Groq LLM with tool definition: \texttt{route\_query}
+\STATE Parse tool call: $(type, query_{refined}) \leftarrow$ LLM response
+\IF{$type =$ None}
+    \STATE \textbf{return} Direct conversational response // Small talk
+\ENDIF
+
+\STATE // \textbf{Stage 3: Agent Routing}
+\IF{$type = $ ``power\_flow''}
+    \STATE $R \leftarrow$ \texttt{PowerFlowAgent}($query_{refined}$)
+\ELSIF{$type = $ ``web\_search''}
+    \STATE $R \leftarrow$ \texttt{WebSearchAgent}($query_{refined}$)
+\ENDIF
+
+\STATE // \textbf{Stage 4: Response Display}
+\STATE Display $R$ in chat interface
+\STATE Append $(R, ``assistant'')$ to session history
+\STATE \textbf{return} $R$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Power Flow Agent - Multi-Tool Orchestration}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} User query $q$
+\STATE \textbf{Output:} Synthesized markdown response $R$
+
+\STATE Initialize message history: $M \leftarrow [system\_prompt, q]$
+\STATE Define tools: $T = \{$Ybus, GaussSeidel, Loss, Fault$\}$
+\STATE iteration $\leftarrow 0$, max\_iter $\leftarrow 10$
+
+\WHILE{iteration $<$ max\_iter}
+    \STATE Call Groq LLM: response $\leftarrow$ \texttt{chat.create}($M$, tools=$T$)
+    \STATE Extract tool\_calls from response
+    
+    \IF{tool\_calls = $\emptyset$}
+        \STATE \textbf{break} // No more tools needed, final answer ready
+    \ENDIF
+    
+    \STATE Append response to $M$
+    
+    \FOR{each tool\_call in tool\_calls}
+        \STATE Parse: $(tool_{name}, args) \leftarrow$ tool\_call
+        
+        \IF{$tool_{name} = $ ``run\_ybus\_calculation\_agent''}
+            \STATE $result \leftarrow$ \texttt{YbusAgent}($args.query$)
+        \ELSIF{$tool_{name} = $ ``run\_power\_flow\_agent''}
+            \STATE $result \leftarrow$ \texttt{GaussSeidelAgent}($args.query$)
+        \ELSIF{$tool_{name} = $ ``run\_loss\_agent''}
+            \STATE $result \leftarrow$ \texttt{LossAgent}($args.query$)
+        \ELSIF{$tool_{name} = $ ``run\_bolted\_fault\_agent''}
+            \STATE $result \leftarrow$ \texttt{FaultAgent}($args.query$)
+        \ENDIF
+        
+        \STATE Append $(tool_{name}, result)$ to $M$ as tool response
+    \ENDFOR
+    
+    \STATE iteration $\leftarrow$ iteration + 1
+\ENDWHILE
+
+\STATE Extract final text response from last LLM call
+\STATE \textbf{return} formatted markdown with disclaimer
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Gauss-Seidel Load Flow Solver (Pure Python)}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} $Y_{bus}$, bus\_type, $P_{spec}$, $Q_{spec}$, $Q_{min}$, $Q_{max}$, $V_{init}$, $\epsilon$, max\_iter
+\STATE \textbf{Output:} $V$ (voltage vector)
+
+\STATE $V \leftarrow V_{init}$, $k \leftarrow 0$
+
+\WHILE{$k < $ max\_iter}
+    \STATE $V_{\text{prev}} \leftarrow V$
+
+    \FOR{$j = 2$ \TO $n$}
+        \STATE \textit{/* Skip slack bus (j = 1) */}    
+
+        \IF{bus\_type[$j$] = PV}
+            \STATE \textit{/* PV Bus Update */}
+            \STATE Compute $Q_j = \Im\!\left\{ V_j \sum_{i=1}^{n} Y_{ji}^* V_i^* \right\}$
+            \STATE $Q_j \leftarrow \max(Q_{\min,j}, \min(Q_j, Q_{\max,j}))$
+            \STATE $S_j \leftarrow P_j - jQ_j$
+            \STATE $\sigma_j \leftarrow \sum_{i \neq j} Y_{ji} V_i$
+            \STATE $V_j \leftarrow \frac{1}{Y_{jj}}\left( \frac{S_j^*}{V_j^*} - \sigma_j \right)$
+            \STATE $V_j \leftarrow |V_{j,\text{spec}}| \cdot \frac{V_j}{|V_j|}$
+        \ELSE
+            \STATE \textit{/* PQ Bus Update */}
+            \STATE $S_j \leftarrow P_j - jQ_j$
+            \STATE $\sigma_j \leftarrow \sum_{i \neq j} Y_{ji} V_i$
+            \STATE $V_j \leftarrow \frac{1}{Y_{jj}}\left( \frac{S_j^*}{V_j^*} - \sigma_j \right)$
+        \ENDIF
+    \ENDFOR
+
+    \STATE Compute $err \leftarrow \max_j | V_j - V_{\text{prev},j} |$
+
+    \IF{$err < \epsilon$}
+        \STATE \textbf{break} \textit{/* Converged */}
+    \ENDIF
+
+    \STATE $k \leftarrow k + 1$
+
+\ENDWHILE
+
+\STATE \textbf{return} $V$
+\end{algorithmic}
+\end{algorithm}
+
+\section{Data Flow Example}
+
+Consider a user query: \textit{``Calculate voltages and losses for a 3-bus system with lines 1-2 (R=0.02, X=0.06) and 2-3 (R=0.03, X=0.09)''}
+
+\textbf{Execution Flow:}
+\begin{enumerate}
+    \item \textbf{Orchestrator}: Classifies as ``power\_flow'', extracts refined query
+    \item \textbf{Power Flow Agent}: Determines need for Ybus $\rightarrow$ Gauss-Seidel $\rightarrow$ Loss
+    \item \textbf{Ybus Agent}: 
+    \begin{itemize}
+        \item Parses branch data: $[(1,2,0.02,0.06,1,0), (2,3,0.03,0.09,1,0)]$
+        \item Calls MATLAB: computes $3 \times 3$ complex Ybus
+        \item Returns: \texttt{``Ybus = [[...], [...], [...]]''}
+    \end{itemize}
+    \item \textbf{Gauss-Seidel Agent}:
+    \begin{itemize}
+        \item Uses Ybus from previous step
+        \item Runs iterative solver for 15 iterations
+        \item Returns: $V = [1.0\angle0^\circ, 0.97\angle-3.2^\circ, 0.95\angle-5.1^\circ]$
+    \end{itemize}
+    \item \textbf{Loss Agent}:
+    \begin{itemize}
+        \item Uses Ybus and $V$ from previous steps
+        \item Computes $P_{loss} = 0.042$ pu
+    \end{itemize}
+    \item \textbf{Power Flow Agent}: Synthesizes all results into markdown report
+    \item \textbf{Orchestrator}: Returns final response to frontend
+\end{enumerate}
 
 \chapter{Implementation Details}
 
@@ -206,16 +516,6 @@ Environment & python-dotenv \\
 \end{tabular}
 \caption{6-Week Development Timeline}
 \end{table}
-
-\section{MATLAB Integration}
-The system uses \texttt{matlab.engine} for high-accuracy computations:
-
-\begin{lstlisting}[language=Python, caption=Example MATLAB Engine Usage]
-import matlab.engine
-eng = matlab.engine.start_matlab()
-Ybus = eng.calculate_ybus(branch_data, nargout=1)
-eng.quit()
-\end{lstlisting}
 
 Complex number conversion between NumPy and MATLAB is handled automatically.
 
