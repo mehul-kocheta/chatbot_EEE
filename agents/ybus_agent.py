@@ -26,14 +26,6 @@ def compute_ybus_matlab(line_data):
     # Convert line_data to MATLAB format
     ldata = matlab.double(line_data)
     
-    # Extract columns
-    fb = eng.eval(f"ldata(:,1)", nargout=1)
-    tb = eng.eval(f"ldata(:,2)", nargout=1)
-    R = eng.eval(f"ldata(:,3)", nargout=1)
-    X = eng.eval(f"ldata(:,4)", nargout=1)
-    a = eng.eval(f"ldata(:,5)", nargout=1)
-    sh = eng.eval(f"ldata(:,6)", nargout=1)
-    
     # Store in MATLAB workspace
     eng.workspace['ldata'] = ldata
     
@@ -60,8 +52,8 @@ def compute_ybus_matlab(line_data):
     # Build diagonal elements
     eng.eval("""
     for m = 1:nbranch
-        ybus(fb(m), fb(m)) = ybus(fb(m), fb(m)) + 1/(z(m)*(a(m)^2)) + sh(m)/2;
-        ybus(tb(m), tb(m)) = ybus(tb(m), tb(m)) + 1/(z(m)*(a(m)^2)) + sh(m)/2;
+        ybus(fb(m), fb(m)) = ybus(fb(m), fb(m)) + 1/(z(m)*(a(m)^2)) + 1i*sh(m)/2;
+        ybus(tb(m), tb(m)) = ybus(tb(m), tb(m)) + 1/(z(m)*(a(m)^2)) + 1i*sh(m)/2;
     end
     """, nargout=0)
     
@@ -89,6 +81,7 @@ def run_ybus_agent(user_prompt):
             2. Branch data format: From Bus, To Bus, R (resistance), X (reactance), a (transformer ratio), Shunt Admittance
             3. Call the compute_ybus function with the extracted data
             4. Return the Ybus matrix in a clear format
+            5. If element number is a column name then ignore that column while calling the tool.
             
             The line data should be in the format:
             [[from1, to1, R1, X1, a1, sh1],

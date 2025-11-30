@@ -361,46 +361,67 @@ Streamlit-based chat interface with image upload, history, and responsive design
 \end{algorithm}
 
 \begin{algorithm}[H]
-\caption{Power Flow Agent - Multi-Tool Orchestration}
+\caption{Orchestrator - Multi-Agent Query Routing with Intent Classification}
 \begin{algorithmic}[1]
-\STATE \textbf{Input:} User query $q$
-\STATE \textbf{Output:} Synthesized markdown response $R$
+\STATE \textbf{Input:} User query $q$, conversation history $H$
+\STATE \textbf{Output:} Agent response $R$
 
-\STATE Initialize message history: $M \leftarrow [system\_prompt, q]$
-\STATE Define tools: $T = \{$Ybus, GaussSeidel, Loss, Fault$\}$
-\STATE iteration $\leftarrow 0$, max\_iter $\leftarrow 10$
+\STATE // \textbf{Phase 1: Intent Classification}
+\STATE Initialize context: $C \leftarrow [system\_prompt, H, q]$
+\STATE Define routing function: $route\_query(query, type)$
+\STATE Call LLM with function calling: $intent \leftarrow$ \texttt{classify\_query}($C$)
 
-\WHILE{iteration $<$ max\_iter}
-    \STATE Call Groq LLM: response $\leftarrow$ \texttt{chat.create}($M$, tools=$T$)
-    \STATE Extract tool\_calls from response
+\STATE // \textbf{Phase 2: Agent Routing}
+\IF{$intent.type = $ ``power\_flow''}
+    \STATE // Route to Power Flow Agent (Master Coordinator)
+    \STATE Initialize tools: $T = \{$Ybus, GaussSeidel, Loss, Fault$\}$
+    \STATE $M \leftarrow [agent\_prompt, q]$
+    \STATE iteration $\leftarrow 0$, max\_iter $\leftarrow 10$
     
-    \IF{tool\_calls = $\emptyset$}
-        \STATE \textbf{break} // No more tools needed, final answer ready
-    \ENDIF
-    
-    \STATE Append response to $M$
-    
-    \FOR{each tool\_call in tool\_calls}
-        \STATE Parse: $(tool_{name}, args) \leftarrow$ tool\_call
+    \WHILE{iteration $<$ max\_iter}
+        \STATE Call LLM: response $\leftarrow$ \texttt{LLM.call}($M$, tools=$T$)
+        \STATE Extract tool\_calls from response
         
-        \IF{$tool_{name} = $ ``run\_ybus\_calculation\_agent''}
-            \STATE $result \leftarrow$ \texttt{YbusAgent}($args.query$)
-        \ELSIF{$tool_{name} = $ ``run\_power\_flow\_agent''}
-            \STATE $result \leftarrow$ \texttt{GaussSeidelAgent}($args.query$)
-        \ELSIF{$tool_{name} = $ ``run\_loss\_agent''}
-            \STATE $result \leftarrow$ \texttt{LossAgent}($args.query$)
-        \ELSIF{$tool_{name} = $ ``run\_bolted\_fault\_agent''}
-            \STATE $result \leftarrow$ \texttt{FaultAgent}($args.query$)
+        \IF{tool\_calls = $\emptyset$}
+            \STATE \textbf{break} // Final answer ready
         \ENDIF
         
-        \STATE Append $(tool_{name}, result)$ to $M$ as tool response
-    \ENDFOR
-    
-    \STATE iteration $\leftarrow$ iteration + 1
-\ENDWHILE
+        \FOR{each tool\_call in tool\_calls}
+            \STATE Parse: $(tool_{name}, args) \leftarrow$ tool\_call
+            
+            \IF{$tool_{name} = $ ``calculate\_ybus''}
+                \STATE $result \leftarrow$ \texttt{YbusAgent}($args$)
+            \ELSIF{$tool_{name} = $ ``solve\_gauss\_seidel''}
+                \STATE $result \leftarrow$ \texttt{GaussSeidelAgent}($args$)
+            \ELSIF{$tool_{name} = $ ``calculate\_losses''}
+                \STATE $result \leftarrow$ \texttt{LossAgent}($args$)
+            \ELSIF{$tool_{name} = $ ``analyze\_fault''}
+                \STATE $result \leftarrow$ \texttt{FaultAgent}($args$)
+            \ENDIF
+            
+            \STATE Append $(tool_{name}, result)$ to $M$
+        \ENDFOR
+        \STATE iteration $\leftarrow$ iteration + 1
+    \ENDWHILE
+    \STATE $R \leftarrow$ formatted response with disclaimer
 
-\STATE Extract final text response from last LLM call
-\STATE \textbf{return} formatted markdown with disclaimer
+\ELSIF{$intent.type = $ ``matlab\_code''}
+    \STATE // Route to MATLAB Executor Agent
+    \STATE Define tool: $execute\_matlab\_code(code, is\_plot)$
+    \STATE $R \leftarrow$ \texttt{MATLABExecutorAgent}($q$)
+    \STATE // Generates code, executes, returns results/plots
+
+\ELSIF{$intent.type = $ ``web\_search''}
+    \STATE // Route to Web Search Agent
+    \STATE $results \leftarrow$ \texttt{search\_web}($q$)
+    \STATE $R \leftarrow$ \texttt{synthesize\_with\_LLM}($q$, $results$)
+    \STATE // Scrapes web, synthesizes answer with sources
+
+\ELSE
+    \STATE $R \leftarrow$ \texttt{handle\_small\_talk}($q$)
+\ENDIF
+
+\STATE \textbf{return} $R$
 \end{algorithmic}
 \end{algorithm}
 

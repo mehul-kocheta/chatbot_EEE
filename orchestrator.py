@@ -1,6 +1,7 @@
 # orchestrator.py
 from agents.websearch_agent import run_websearch_agent
 from agents.power_flow_agent import run_power_flow_agent
+from agents.matlab_executor_agent import run_matlab_executor_agent
 from dotenv import load_dotenv
 import os
 from groq import Groq
@@ -16,13 +17,13 @@ tools = [
     "type": "function",
     "function": {
       "name": "route_query",
-      "description": "Routes the query to either the power_flow or web_search handler based on the type",
+      "description": "Routes the query to the appropriate handler based on the type",
       "parameters": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["power_flow", "web_search"],
+            "enum": ["power_flow", "web_search", "matlab_executor"],
             "description": "The target handler for the query"
           },
           "query": {
@@ -59,14 +60,19 @@ def classify_query(user_query, image_base64=None, conversation_history=None):
         {
             "role": "system",
             "content": (
-                "You are an expert agent that determines whether a user query "
-                "is related to POWERFLOW analysis or a GENERAL WEB SEARCH. "
+                "You are an expert agent that routes user queries to the appropriate handler. "
                 "If an image is provided, analyze it and use it to help classify the query. "
                 "Use the conversation history to understand context and follow-up questions. "
-                "Call the route_query tool with type = 'power_flow' for questions about power flow analysis like solving the Ybus for volatage at each bus, when you are giving query ensure that all the data is in the query itself and not in the conversation history."
-                "bus voltages, admittance matrices, or similar topics. "
-                "Call the route_query tool with type = 'web_search' for all other general knowledge questions, "
-                "Else for small talk and greetings, never call any tool and just respond accordingly."
+                "\n\n"
+                "Route queries as follows:\n"
+                "1. type = 'power_flow': For power flow analysis questions like solving Ybus, calculating bus voltages, "
+                "admittance matrices, or power system network analysis. Ensure all data is in the query itself.\n"
+                "2. type = 'matlab_executor': For general MATLAB programming tasks, control systems, signal processing, "
+                "plotting, simulations, or any task requiring custom MATLAB code execution. This includes transfer functions, "
+                "step responses, bode plots, state-space models, differential equations, etc.\n"
+                "3. type = 'web_search': For general knowledge questions not related to technical computation.\n"
+                "\n"
+                "For small talk and greetings, DO NOT call any tool - just respond naturally."
             )
         }
     ]
@@ -112,6 +118,8 @@ def orchestrate(user_query, image_base64=None, conversation_history=None):
         return run_power_flow_agent(query)
     elif answer == "web_search":
         return run_websearch_agent(query)
+    elif answer == "matlab_executor":
+        return run_matlab_executor_agent(query)
     else:
         return answer
 
