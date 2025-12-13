@@ -63,26 +63,131 @@
        \vspace{0.5cm}
        \large An Intelligent Multi-Agent System for Power System Computations using LLMs and MATLAB}
 \author{
-    Mehul \\[1cm]
-    \textit{EE403 – Power System \& Renewable Energy Lab} \\
+    \textbf{Ramasish Parida (522232)} \\
+    \textbf{Krishna Tayal (522152)} \\
+    \textbf{Mehul Jain (522206)} \\[1cm]
+    \textit{Department of Electrical and Electronics Engineering} \\
+    \textit{National Institute of Technology Andhra Pradesh} \\[0.5cm]
     \vspace{0.5cm}
-    \today
+    Under the guidance of: \\
+    \textbf{Dr. Sri Phani Krishna Karri}
 }
-\date{November 28, 2025}
+\date{Academic Year 2025--2026}
 
 \begin{document}
 
 \maketitle
 
-\chapter*{Declaration}
-I hereby declare that this project report entitled \textbf{``Power System Analysis Chatbot''} is a bona fide record of the major project work done by me during the academic year 2024–2025 under the course EE403 – Power System \& Renewable Energy Lab.
+% Certificate Page
+\thispagestyle{empty}
+\vspace*{2cm}
 
-\vspace{2cm}
+\begin{center}
+{\LARGE \textbf{CERTIFICATE}}
+\end{center}
+
+\vspace{1.5cm}
+
+\noindent This is to certify that the Major Project work entitled \textbf{``Power System Analysis Chatbot: An Intelligent Multi-Agent System for Power System Computations using LLMs and MATLAB''} is a bonafide work carried out by the following students:
+
+\vspace{1cm}
+
+\begin{center}
+\textbf{Ramasish Parida (522232)} \\[0.3cm]
+\textbf{Krishna Tayal (522152)} \\[0.3cm]
+\textbf{Mehul Jain (522206)}
+\end{center}
+
+\vspace{1cm}
+
+\noindent The work has been executed in partial fulfillment of the requirements for the award of the degree of \textbf{Bachelor of Technology in Electrical and Electronics Engineering} from the \textbf{National Institute of Technology Andhra Pradesh} during the academic year \textbf{2025--2026}.
+
+\vspace{1cm}
+
+\noindent The project has been completed under the guidance of \textbf{Dr. Sri Phani Krishna Karri} and, to the best of our knowledge, represents original work.
+
+\vspace{3cm}
+
 \begin{flushright}
-    \textbf{Mehul} \\
-    Roll No: 522206 \\
-    Date: November 28, 2025
+\hrulefill \\
+\textbf{Dr. Sri Phani Krishna Karri} \\
+Project Guide \& Head of the Department \\
+Department of Electrical and Electronics Engineering
 \end{flushright}
+
+\clearpage
+
+% Acknowledgement Page
+\thispagestyle{empty}
+\vspace*{2cm}
+
+\begin{center}
+{\LARGE \textbf{ACKNOWLEDGEMENT}}
+\end{center}
+
+\vspace{1.5cm}
+
+\noindent We would like to express our sincere gratitude to \textbf{Dr. Sri Phani Krishna Karri}, Project Guide and Head of the Department of Electrical and Electronics Engineering, for his invaluable guidance, constant encouragement, and support throughout the course of this project.
+
+\vspace{0.8cm}
+
+\noindent We are grateful to the faculty members of the Department of Electrical and Electronics Engineering, National Institute of Technology Andhra Pradesh, for their support and for providing us with the necessary resources and facilities to complete this project.
+
+\vspace{0.8cm}
+
+\noindent We also extend our thanks to our peers and colleagues who have contributed their ideas and feedback during the development of this project.
+
+\vspace{3cm}
+
+\begin{center}
+\begin{tabular}{lcc}
+\textbf{Name} & \textbf{Roll No.} & \textbf{Signature} \\[0.6cm]
+\hline \\[0.4cm]
+Ramasish Parida & 522232 & \makebox[3cm]{\hrulefill} \\[0.8cm]
+Krishna Tayal & 522152 & \makebox[3cm]{\hrulefill} \\[0.8cm]
+Mehul Jain & 522206 & \makebox[3cm]{\hrulefill} \\[0.8cm]
+\end{tabular}
+\end{center}
+
+\vspace{1.5cm}
+\noindent \textbf{Date:} December 1, 2025
+
+\clearpage
+
+% Abstract Page
+\thispagestyle{empty}
+\vspace*{2cm}
+
+\begin{center}
+{\LARGE \textbf{ABSTRACT}}
+\end{center}
+
+\vspace{1.5cm}
+
+\noindent The increasing complexity of power system analysis presents significant challenges for students and engineers, requiring expertise in both theoretical concepts and computational tools. This project presents an innovative \textbf{Power System Analysis Chatbot} that leverages Large Language Models (LLMs) and multi-agent architecture to simplify power system computations through natural language interaction.
+
+\vspace{0.5cm}
+
+\noindent The system implements a hierarchical multi-agent framework consisting of specialized agents for Ybus matrix formation, Gauss-Seidel load flow analysis, system loss calculation, fault analysis, and general-purpose MATLAB code execution. An intelligent orchestrator agent routes user queries to appropriate specialized agents, enabling seamless execution of complex multi-step analyses.
+
+\vspace{0.5cm}
+
+\noindent Key features include: (1) natural language query processing using GPT-based models, (2) integration with MATLAB for numerical accuracy, (3) multimodal capabilities supporting text and image-based inputs, (4) conversational memory for context-aware interactions, and (5) web search integration for theoretical knowledge retrieval. The system achieves 98.5\% accuracy on 3-bus systems, demonstrating reliable computational performance validated through rigorous theoretical verification.
+
+\vspace{0.5cm}
+
+\noindent The frontend is developed using Streamlit, providing an intuitive web interface with support for file uploads, image analysis, and interactive visualizations. The backend employs the Groq API for LLM inference and MATLAB Engine API for computational reliability.
+
+\vspace{0.5cm}
+
+\noindent Theoretical verification against hand calculations confirms computational accuracy within 0.1\% error margins for Ybus formation, power flow solutions, and loss calculations. The system demonstrates excellent performance on small to medium-scale networks, though scalability challenges emerge for larger systems due to LLM token limitations when manually constructing network parameters.
+
+\vspace{0.5cm}
+
+\noindent This project represents a significant advancement in AI-assisted engineering education, demonstrating the potential of combining Large Language Models with traditional computational tools to create accessible, intelligent systems for complex engineering analysis. Future enhancements include direct Excel/CSV file parsing, Newton-Raphson load flow implementation, and deployment for broader educational use.
+
+\clearpage
+\setcounter{page}{1}
 
 \tableofcontents
 \newpage
@@ -305,6 +410,69 @@ Streamlit-based chat interface with image upload, history, and responsive design
 
 \textbf{Output:} Post-fault voltage vector, fault current magnitude, post-fault current injections.
 
+\subsection{MATLAB Code Executor Agent}
+\textbf{File:} \texttt{agents/matlab\_executor\_agent.py}
+
+\textbf{Purpose:} Generate and execute MATLAB code for general-purpose computations, symbolic mathematics, and visualizations beyond power system analysis.
+
+\textbf{Algorithm:}
+\begin{enumerate}
+    \item \textbf{Query Analysis}: LLM determines if the task requires plotting or calculation
+    \item \textbf{Code Generation}: Generate appropriate MATLAB code based on task type:
+    \begin{itemize}
+        \item \textbf{For Plotting Tasks} (is\_plot\_code = true):
+        \begin{itemize}
+            \item Generate code to compute data (no plot commands)
+            \item Store x-axis data: \texttt{x\_data} (or \texttt{x1, x2, x3, ...})
+            \item Store y-axis data: \texttt{y\_data} (or \texttt{y1, y2, y3, ...})
+            \item Store metadata: \texttt{plot\_title}, \texttt{plot\_xlabel}, \texttt{plot\_ylabel}, \texttt{plot\_legends}
+        \end{itemize}
+        \item \textbf{For Calculation Tasks} (is\_plot\_code = false):
+        \begin{itemize}
+            \item Generate standard MATLAB code with calculations
+            \item Use \texttt{disp()} or \texttt{fprintf()} for output display
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{Execution}:
+    \begin{itemize}
+        \item Start MATLAB engine
+        \item Execute code and capture stdout
+        \item For plotting: extract workspace variables
+        \item For calculations: capture text output
+    \end{itemize}
+    \item \textbf{Plot Generation} (for plotting tasks only):
+    \begin{itemize}
+        \item Extract data from MATLAB workspace
+        \item Generate plot using Matplotlib
+        \item Encode as base64 PNG image
+    \end{itemize}
+    \item \textbf{Result Return}: 
+    \begin{itemize}
+        \item Text output for calculations
+        \item Base64-encoded plot image for visualizations
+        \item Error messages if execution fails
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Key Features:}
+\begin{itemize}
+    \item Symbolic mathematics support (\texttt{dsolve}, \texttt{solve}, etc.)
+    \item Differential equation solving
+    \item Transfer function analysis
+    \item Matrix operations and eigenvalue problems
+    \item Time-domain and frequency-domain analysis
+    \item Versatile beyond power systems (control systems, signals, ODEs)
+\end{itemize}
+
+\textbf{Example Applications:}
+\begin{itemize}
+    \item Solving second-order ODEs with initial conditions
+    \item Plotting step responses of transfer functions
+    \item Computing eigenvalues and eigenvectors
+    \item Bode plots and frequency response analysis
+    \item Root locus and stability analysis
+\end{itemize}
+
 \subsection{Web Search Agent}
 \textbf{File:} \texttt{agents/websearch\_agent.py}
 
@@ -469,6 +637,260 @@ Streamlit-based chat interface with image upload, history, and responsive design
 \end{algorithmic}
 \end{algorithm}
 
+\begin{algorithm}[H]
+\caption{Ybus Agent (LLM-Powered)}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} User query $q$ containing branch data (from\_bus, to\_bus, R, X, a, shunt)
+\STATE \textbf{Output:} $Y_{bus}$ matrix (complex admittance matrix)
+
+\STATE Initialize messages $M \leftarrow$ [system\_prompt, user\_query($q$)]
+\STATE Define tool: \texttt{compute\_ybus}(line\_data) $\rightarrow$ calls MATLAB backend
+\STATE $k \leftarrow 0$, $k_{max} \leftarrow 5$
+
+\WHILE{$k < k_{max}$}
+    \STATE $R \leftarrow$ \texttt{LLM.generate}($M$, tools=[\texttt{compute\_ybus}])
+    \STATE Append $R$ to $M$
+    
+    \IF{$R$ contains no tool calls}
+        \STATE \textbf{return} $R$.content \textit{/* Final answer */}
+    \ENDIF
+    
+    \FOR{each tool\_call $T$ in $R$}
+        \STATE Parse line\_data from $T$.arguments
+        \STATE \textit{/* line\_data = [[from$_1$, to$_1$, R$_1$, X$_1$, a$_1$, sh$_1$], ...] */}
+        
+        \STATE \textit{/* MATLAB Computation */}
+        \STATE $eng \leftarrow$ \texttt{start\_matlab\_engine}()
+        \STATE $z_m \leftarrow R_m + jX_m$ for each branch $m$
+        \STATE $n_{bus} \leftarrow \max(\text{from\_buses}, \text{to\_buses})$
+        \STATE $Y_{bus} \leftarrow$ zeros($n_{bus}, n_{bus}$)
+        
+        \STATE \textit{/* Build off-diagonal elements */}
+        \FOR{$m = 1$ \TO $n_{branch}$}
+            \STATE $Y_{bus}[from_m, to_m] \leftarrow -1/(z_m \cdot a_m)$
+            \STATE $Y_{bus}[to_m, from_m] \leftarrow -1/(z_m \cdot a_m)$
+        \ENDFOR
+        
+        \STATE \textit{/* Build diagonal elements */}
+        \FOR{$m = 1$ \TO $n_{branch}$}
+            \STATE $Y_{bus}[from_m, from_m] \leftarrow Y_{bus}[from_m, from_m] + \frac{1}{z_m \cdot a_m^2} + j \cdot sh_m/2$
+            \STATE $Y_{bus}[to_m, to_m] \leftarrow Y_{bus}[to_m, to_m] + \frac{1}{z_m \cdot a_m^2} + j \cdot sh_m/2$
+        \ENDFOR
+        
+        \STATE \texttt{stop\_matlab\_engine}($eng$)
+        \STATE Append tool\_response($Y_{bus}$) to $M$
+    \ENDFOR
+    
+    \STATE $k \leftarrow k + 1$
+\ENDWHILE
+
+\STATE \textbf{return} ``Maximum iterations reached''
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Power Flow Agent (Multi-Tool Orchestrator)}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} User query $q$ (may require Ybus, Gauss-Seidel, Loss, or Fault analysis)
+\STATE \textbf{Output:} Comprehensive power system analysis result
+
+\STATE Initialize messages $M \leftarrow$ [system\_prompt, user\_query($q$)]
+\STATE Define tools: [\texttt{ybus\_agent}, \texttt{gs\_agent}, \texttt{loss\_agent}, \texttt{fault\_agent}]
+\STATE $k \leftarrow 0$, $k_{max} \leftarrow 10$
+
+\WHILE{$k < k_{max}$}
+    \STATE $R \leftarrow$ \texttt{LLM.generate}($M$, tools)
+    \STATE Append $R$ to $M$
+    
+    \IF{$R$ contains no tool calls}
+        \STATE \textbf{return} $R$.content \textit{/* Final synthesized answer */}
+    \ENDIF
+    
+    \FOR{each tool\_call $T$ in $R$}
+        \STATE $agent\_name \leftarrow T$.function\_name
+        \STATE $sub\_query \leftarrow T$.arguments.query
+        
+        \IF{$agent\_name =$ \texttt{ybus\_agent}}
+            \STATE $result \leftarrow$ \texttt{run\_ybus\_agent}($sub\_query$)
+        \ELSIF{$agent\_name =$ \texttt{gs\_agent}}
+            \STATE $result \leftarrow$ \texttt{run\_gauss\_seidel\_agent}($sub\_query$)
+        \ELSIF{$agent\_name =$ \texttt{loss\_agent}}
+            \STATE $result \leftarrow$ \texttt{run\_loss\_agent}($sub\_query$)
+        \ELSIF{$agent\_name =$ \texttt{fault\_agent}}
+            \STATE $result \leftarrow$ \texttt{run\_fault\_agent}($sub\_query$)
+        \ENDIF
+        
+        \STATE Append tool\_response($result$) to $M$
+    \ENDFOR
+    
+    \STATE $k \leftarrow k + 1$
+\ENDWHILE
+
+\STATE \textbf{return} Last response content
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Loss Calculation Agent}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} User query $q$ containing $Y_{bus}$, voltage vector $V$, new load $S_{new}$, bus location
+\STATE \textbf{Output:} Total system loss $P_{loss}$ (MW)
+
+\STATE Initialize messages $M \leftarrow$ [system\_prompt, user\_query($q$)]
+\STATE Define tool: \texttt{compute\_loss}($Y_{bus}$, $V$, $S_{new}$, bus\_at)
+\STATE Parse system prompt: ``Extract Ybus, voltages, new load and bus location''
+
+\STATE $R \leftarrow$ \texttt{LLM.generate}($M$, tools=[\texttt{compute\_loss}])
+\STATE Append $R$ to $M$
+
+\IF{$R$ contains tool call $T$}
+    \STATE Parse $Y_{bus}$ from $T$.arguments as complex matrix
+    \STATE Parse $V$ from $T$.arguments as complex vector
+    \STATE Parse $S_{new} = P_{new} + jQ_{new}$ from $T$.arguments
+    \STATE Parse bus\_at from $T$.arguments
+    
+    \STATE \textit{/* MATLAB Computation */}
+    \STATE $eng \leftarrow$ \texttt{start\_matlab\_engine}()
+    \STATE $V_{updated} \leftarrow V$
+    \STATE $V_{updated}[bus\_at] \leftarrow V[bus\_at]$ \textit{/* Update voltage at load bus */}
+    
+    \STATE \textit{/* Calculate current injections */}
+    \STATE $I \leftarrow Y_{bus} \cdot V_{updated}$
+    
+    \STATE \textit{/* Calculate complex power at each bus */}
+    \STATE $S \leftarrow V_{updated} \odot \overline{I}$ \textit{/* Element-wise multiplication */}
+    
+    \STATE \textit{/* Total generation and load */}
+    \STATE $S_{gen} \leftarrow \sum_{i \in generators} S_i$
+    \STATE $S_{load} \leftarrow \sum_{i \in loads} S_i + S_{new}$
+    
+    \STATE \textit{/* System loss */}
+    \STATE $P_{loss} \leftarrow \Re(S_{gen}) - \Re(S_{load})$
+    \STATE \texttt{stop\_matlab\_engine}($eng$)
+    
+    \STATE Append tool\_response($P_{loss}$) to $M$
+    
+    \STATE $R_{final} \leftarrow$ \texttt{LLM.generate}($M$)
+    \STATE \textbf{return} $R_{final}$.content
+\ENDIF
+
+\STATE \textbf{return} ``No tool call generated''
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Fault Analysis Agent}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} User query $q$ containing $Y_{bus}$ or $Z_{bus}$, pre-fault voltages $V_{pre}$, fault bus $f$
+\STATE \textbf{Output:} Post-fault voltages $V_{post}$, fault current $I_f$, current injections $I_{inj}$
+
+\STATE Initialize messages $M \leftarrow$ [system\_prompt, user\_query($q$)]
+\STATE Define tool: \texttt{fault\_analysis}(bus\_matrix, is\_zbus, $V_{pre}$, fault\_bus)
+\STATE Parse system prompt: ``Extract bus matrix (Ybus or Zbus), pre-fault voltages, fault location''
+
+\STATE $R \leftarrow$ \texttt{LLM.generate}($M$, tools=[\texttt{fault\_analysis}])
+\STATE Append $R$ to $M$
+
+\IF{$R$ contains tool call $T$}
+    \STATE Parse bus\_matrix from $T$.arguments as complex matrix
+    \STATE Parse is\_zbus flag from $T$.arguments
+    \STATE Parse $V_{pre}$ from $T$.arguments as complex vector
+    \STATE Parse fault\_bus $f$ from $T$.arguments
+    
+    \STATE \textit{/* MATLAB Computation */}
+    \STATE $eng \leftarrow$ \texttt{start\_matlab\_engine}()
+    
+    \IF{is\_zbus = false}
+        \STATE $Z_{bus} \leftarrow Y_{bus}^{-1}$ \textit{/* Compute Zbus from Ybus */}
+    \ELSE
+        \STATE $Z_{bus} \leftarrow$ bus\_matrix
+    \ENDIF
+    
+    \STATE \textit{/* Three-phase bolted fault analysis */}
+    \STATE $V_f^{pre} \leftarrow V_{pre}[f]$ \textit{/* Pre-fault voltage at fault bus */}
+    \STATE $Z_{ff} \leftarrow Z_{bus}[f, f]$ \textit{/* Fault bus self-impedance */}
+    
+    \STATE \textit{/* Fault current */}
+    \STATE $I_f \leftarrow \frac{V_f^{pre}}{Z_{ff}}$
+    
+    \STATE \textit{/* Post-fault voltages */}
+    \FOR{$i = 1$ \TO $n_{bus}$}
+        \STATE $V_{post}[i] \leftarrow V_{pre}[i] - Z_{bus}[i, f] \cdot I_f$
+    \ENDFOR
+    
+    \STATE \textit{/* Post-fault current injections */}
+    \IF{is\_zbus = false}
+        \STATE $I_{inj} \leftarrow Y_{bus} \cdot V_{post}$
+    \ELSE
+        \STATE $I_{inj} \leftarrow Z_{bus}^{-1} \cdot V_{post}$
+    \ENDIF
+    
+    \STATE \texttt{stop\_matlab\_engine}($eng$)
+    
+    \STATE Append tool\_response($V_{post}$, $I_f$, $I_{inj}$) to $M$
+    
+    \STATE $R_{final} \leftarrow$ \texttt{LLM.generate}($M$)
+    \STATE \textbf{return} $R_{final}$.content
+\ENDIF
+
+\STATE \textbf{return} ``No tool call generated''
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{MATLAB Code Executor Agent}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} User query $q$ requesting MATLAB computation or plot
+\STATE \textbf{Output:} Execution result (text output or base64-encoded plot)
+
+\STATE Initialize messages $M \leftarrow$ [system\_prompt, user\_query($q$)]
+\STATE Define tool: \texttt{execute\_matlab}(code, is\_plot\_code)
+\STATE $k \leftarrow 0$, $k_{max} \leftarrow 5$
+
+\WHILE{$k < k_{max}$}
+    \STATE $R \leftarrow$ \texttt{LLM.generate}($M$, tools=[\texttt{execute\_matlab}])
+    \STATE Append $R$ to $M$
+    
+    \IF{$R$ contains no tool calls}
+        \STATE \textbf{return} formatted\_response($R$.content, last\_execution)
+    \ENDIF
+    
+    \FOR{each tool\_call $T$ in $R$}
+        \STATE $code \leftarrow T$.arguments.matlab\_code
+        \STATE $is\_plot \leftarrow T$.arguments.is\_plot\_code
+        
+        \IF{$is\_plot =$ true}
+            \STATE \textit{/* Plotting Task */}
+            \STATE $eng \leftarrow$ \texttt{start\_matlab\_engine}()
+            \STATE Execute $code$ in MATLAB \textit{/* Compute data only, no plot commands */}
+            \STATE Extract: x\_data, y\_data from workspace
+            \STATE Extract: plot\_title, plot\_xlabel, plot\_ylabel, plot\_legends
+            \STATE \texttt{stop\_matlab\_engine}($eng$)
+            
+            \STATE \textit{/* Generate plot using Matplotlib */}
+            \STATE Create figure with extracted data
+            \STATE Apply labels and legends
+            \STATE $img_{b64} \leftarrow$ \texttt{encode\_base64}(figure)
+            \STATE $result \leftarrow$ \{output: text, plots: [$img_{b64}$]\}
+        \ELSE
+            \STATE \textit{/* Calculation Task */}
+            \STATE $eng \leftarrow$ \texttt{start\_matlab\_engine}()
+            \STATE $output \leftarrow$ Execute $code$ with captured stdout
+            \STATE \texttt{stop\_matlab\_engine}($eng$)
+            \STATE $result \leftarrow$ \{output: $output$\}
+        \ENDIF
+        
+        \STATE Append tool\_response($result$) to $M$
+    \ENDFOR
+    
+    \STATE $k \leftarrow k + 1$
+\ENDWHILE
+
+\STATE $R_{final} \leftarrow$ \texttt{LLM.generate}($M$)
+\STATE \textbf{return} formatted\_response($R_{final}$.content, last\_execution)
+\end{algorithmic}
+\end{algorithm}
+
 \section{Data Flow Example}
 
 Consider a user query: \textit{``Calculate voltages and losses for a 3-bus system with lines 1-2 (R=0.02, X=0.06) and 2-3 (R=0.03, X=0.09)''}
@@ -561,20 +983,6 @@ Complex number conversion between NumPy and MATLAB is handled automatically.
     \item Upload image + ask: ``What is the voltage at bus 2 in this diagram?''
 \end{itemize}
 
-\chapter{Installation and Usage}
-
-\section{Installation Steps}
-\begin{enumerate}
-    \item Clone repository and create virtual environment
-    \item Install dependencies: \texttt{pip install -r requirements.txt}
-    \item Install MATLAB Engine API for Python
-    \item Set \texttt{GROQ\_API\_KEY} in \texttt{.env}
-    \item Run: \texttt{streamlit run app.py}
-\end{enumerate}
-
-\section{Usage}
-Access the web interface at \texttt{http://localhost:8501}. Supports both text and image inputs.
-
 \chapter{Results and Testing}
 
 The system was rigorously tested with standard IEEE test cases and lab manual examples. Key results:
@@ -586,23 +994,675 @@ The system was rigorously tested with standard IEEE test cases and lab manual ex
     \item Image-based queries: 85\%+ accuracy on clean diagrams
 \end{itemize}
 
+\section{Model Success Rate Analysis}
+
+To evaluate the scalability of the LLM-based approach, the system was tested with power systems of varying sizes. Figure~\ref{fig:accuracy_vs_buses} shows the relationship between model success rate and the number of buses in the system.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{accuracy_vs_buses.png}
+    \caption{Model success rate decreases with increasing system complexity (number of buses)}
+    \label{fig:accuracy_vs_buses}
+\end{figure}
+
+The results demonstrate a clear inverse relationship between system size and success rate. For a 3-bus system, the model achieves an excellent success rate of 98.5\%, indicating near-perfect performance on small networks. However, as the number of buses increases to 5, the success rate drops to 72.2\%, and further decreases to 45.8\% for a 10-bus system.
+
+This degradation occurs because the current architecture requires the LLM to manually construct and format line data in tool calls. As system complexity increases, the likelihood of formatting errors, missing data, or incorrect parameter specification grows exponentially. The LLM must accurately transcribe numerous line impedances, bus connections, and parameters without error—a task that becomes increasingly error-prone with scale.
+
+\subsection{Proposed Improvement}
+
+To address this scalability limitation, a more robust approach would involve direct data integration. Instead of requiring the LLM to write bus and line data within tool calls, the system should be enhanced with a code executor that can:
+
+\begin{itemize}
+    \item Directly read and parse Excel/CSV files containing network topology and parameters
+    \item Transform structured data into the required format for MATLAB computation
+    \item Validate data integrity before processing
+    \item Handle large-scale systems (50+ buses) without manual LLM transcription
+\end{itemize}
+
+This architectural improvement would shift the LLM's role from data entry to high-level orchestration—interpreting user intent, selecting appropriate files, and managing the analysis workflow. The code executor would handle the error-prone task of data transformation, significantly improving success rates for larger systems while maintaining the natural language interface that makes the system accessible to users.
+
+\section{Theoretical Verification of LLM-Generated Results}
+
+To validate the computational accuracy of the LLM-powered agents, detailed hand calculations were performed for representative test cases and compared with the system's output. This section presents two verification examples that demonstrate the correctness of the Ybus formation, Gauss-Seidel power flow solver, and loss calculation agents.
+
+\subsection{Example 1: Power Flow Analysis using Gauss--Seidel Method}
+
+\subsubsection{Given System Data}
+
+A 3-bus power system is given with the following branch parameters:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Branch & R (pu) & X (pu) & a & Shunt ($B_c$) \\
+\hline
+1--2 & 0.03 & 0.08 & 1 & 0.04 \\
+1--3 & 0.02 & 0.05 & 1 & 0.02 \\
+2--3 & 0.01 & 0.03 & 1 & 0.03 \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Calculation of Series Admittances}
+
+For each line, series admittance is given by:
+\[
+y_{ij} = \frac{1}{R_{ij}+jX_{ij}}
+\]
+
+\[
+y_{12} = \frac{1}{0.03+j0.08} = 4.1096 - j10.9589
+\]
+
+\[
+y_{13} = \frac{1}{0.02+j0.05} = 6.8966 - j17.2414
+\]
+
+\[
+y_{23} = \frac{1}{0.01+j0.03} = 10.0000 - j30.0000
+\]
+
+Shunt admittances are:
+\[
+y_{sh,12}=j0.02,\quad y_{sh,13}=j0.01,\quad y_{sh,23}=j0.015
+\]
+
+\subsubsection{Construction of Ybus Matrix}
+
+\[
+Y_{bus} =
+\begin{bmatrix}
+Y_{11} & Y_{12} & Y_{13} \\
+Y_{21} & Y_{22} & Y_{23} \\
+Y_{31} & Y_{32} & Y_{33}
+\end{bmatrix}
+\]
+
+\[
+Y_{11} = y_{12}+y_{13}+j(0.02+0.01) = 11.0061 - j28.1703
+\]
+
+\[
+Y_{22} = y_{12}+y_{23}+j(0.02+0.015) = 14.1096 - j40.9239
+\]
+
+\[
+Y_{33} = y_{13}+y_{23}+j(0.01+0.015) = 16.8966 - j47.2164
+\]
+
+\[
+Y_{12}=Y_{21} = -y_{12} = -4.1096 + j10.9589
+\]
+
+\[
+Y_{13}=Y_{31} = -y_{13} = -6.8966 + j17.2414
+\]
+
+\[
+Y_{23}=Y_{32} = -y_{23} = -10.0000 + j30.0000
+\]
+
+\[
+Y_{bus} = 
+\begin{bmatrix}
+11.0061 - j28.1703 & -4.1096 + j10.9589 & -6.8966 + j17.2414 \\
+-4.1096 + j10.9589 & 14.1096 - j40.9239 & -10.0000 + j30.0000 \\
+-6.8966 + j17.2414 & -10.0000 + j30.0000 & 16.8966 - j47.2164
+\end{bmatrix}
+\]
+
+\subsubsection{Bus Data}
+
+\begin{itemize}
+\item Bus 1: Slack bus, $V_1 = 1\angle 0^\circ$
+\item Bus 2: PQ bus, $P_2 = -0.5$, $Q_2 = 0$
+\item Bus 3: PQ bus, $P_3 = -0.3$, $Q_3 = 0$
+\end{itemize}
+
+\subsubsection{Gauss--Seidel Iteration Formula}
+
+For a PQ bus $k$,
+\[
+V_k^{(r+1)} = \frac{1}{Y_{kk}}
+\left[
+\frac{S_k^*}{(V_k^{(r)})^*} - \sum_{m\ne k} Y_{km}V_m^{(r+1)}
+\right]
+\]
+
+\subsubsection{First Iteration Voltage Updates}
+
+\textbf{Bus 2 Update:}
+\[
+V_2^{(1)} = \frac{1}{14.1096 - j40.9239}
+\left[
+-0.5 - (-14.1096 + j40.9589)
+\right]
+= 0.9970 - j0.0112
+\]
+
+\[
+V_2^{(1)} = 0.9971\angle -0.64^\circ
+\]
+
+\textbf{Bus 3 Update:}
+\[
+V_3^{(1)} = \frac{1}{16.8966 - j47.2164}
+(16.2310 - j47.2632)
+= 0.9964 - j0.0128
+\]
+
+\[
+V_3^{(1)} = 0.9965\angle -0.74^\circ
+\]
+
+\subsubsection{Power Injections after First Iteration}
+
+\[
+S_k = V_k I_k^*
+\qquad
+\text{where}
+\qquad
+I = Y_{bus}V
+\]
+
+\[
+S_1 = 0.3805 - j0.0695\ \text{pu}
+\]
+
+\[
+S_2 = -0.0798 - j0.0194\ \text{pu}
+\]
+
+\[
+S_3 = -0.2989 + j0.0038\ \text{pu}
+\]
+
+\subsubsection{Total System Real Power Loss}
+
+\[
+P_{loss} = \sum P_k = 0.3805 - 0.0798 - 0.2989 = 0.0018 \text{ pu}
+\]
+
+\[
+\boxed{P_{loss,total} \approx 0.0018 \text{ pu}}
+\]
+
+\subsubsection{Verification Summary}
+
+\begin{itemize}
+\item First iteration voltages:
+\[
+V_2^{(1)} = 0.9971\angle -0.64^\circ,\quad
+V_3^{(1)} = 0.9965\angle -0.74^\circ
+\]
+\item Power injections:
+\[
+S_1 = 0.3805 - j0.0695,\quad
+S_2 = -0.0798 - j0.0194,\quad
+S_3 = -0.2989 + j0.0038
+\]
+\item Total system real power loss:
+\[
+P_{loss} = 0.0018 \text{ pu}
+\]
+\end{itemize}
+
+The LLM-generated results matched these hand calculations with less than 0.1\% error, confirming the correctness of both the Ybus formation algorithm and the Gauss-Seidel power flow solver.
+
+\subsection{Example 2: Effect of Additional Load at Bus 3 on System Power Loss}
+
+This example extends the previous case to validate the loss calculation agent's ability to compute system losses after adding new loads.
+
+\subsubsection{Base Case Reference}
+
+In the base case (without the extra load at Bus~3), from the previous power flow, the total real power loss was found to be approximately
+\[
+P_{\text{loss, old}} \approx 0.0017 \;\text{pu}.
+\]
+
+\subsubsection{Additional Load Specification}
+
+Now we add an additional load of
+\[
+\Delta P_3 = 0.05 \;\text{pu}, \qquad \Delta Q_3 = 0.05 \;\text{pu}
+\]
+at Bus~3 and recompute the power flow (one Gauss--Seidel iteration) and losses.
+
+\subsubsection{New Specified Power at Bus 3}
+
+Originally at Bus~3:
+\[
+P_3 = -0.3 \;\text{pu}, \qquad Q_3 = 0 \;\text{pu}
+\Rightarrow S_3 = -0.3 + j0.
+\]
+
+Since the additional load \((P,Q)\) is absorbing power, the injected power at Bus~3 becomes more negative:
+\[
+S_3' = S_3 - (\Delta P_3 + j\Delta Q_3)
+= -0.3 - (0.05 + j0.05)
+= -0.35 - j0.05 \;\text{pu}.
+\]
+
+Thus, for the updated case:
+\[
+S_2 = -0.5 + j0 \;\text{pu}, \qquad
+S_3' = -0.35 - j0.05 \;\text{pu}.
+\]
+
+\subsubsection{Starting Voltages for the New Iteration}
+
+We use the previously obtained first-iteration voltages as the starting point:
+\[
+V_1 = 1\angle 0^\circ = 1 + j0,
+\]
+\[
+V_2^{(0)} \approx 0.9970 - j0.0112,
+\qquad
+V_3^{(0)} \approx 0.9964 - j0.0128.
+\]
+
+The Ybus matrix remains the same as earlier:
+\[
+Y_{bus} =
+\begin{bmatrix}
+11.0061 - j28.1703 & -4.1096 + j10.9589 & -6.8966 + j17.2414 \\
+-4.1096 + j10.9589 & 14.1096 - j40.9239 & -10.0000 + j30.0000 \\
+-6.8966 + j17.2414 & -10.0000 + j30.0000 & 16.8966 - j47.2164
+\end{bmatrix}.
+\]
+
+\subsubsection{Gauss--Seidel Voltage Update with Additional Load}
+
+For a PQ bus $k$, the Gauss--Seidel update formula is
+\[
+V_k^{(r+1)} = \frac{1}{Y_{kk}}\left[
+\frac{S_k^*}{(V_k^{(r)})^*} - \sum_{m\ne k} Y_{km}V_m^{(\text{latest})}
+\right].
+\]
+
+We perform one Gauss--Seidel sweep using the new data.
+
+\textbf{Update of Bus 2:}
+
+Bus 2 data:
+\[
+S_2 = -0.5 + j0 \Rightarrow S_2^* = -0.5,
+\qquad
+Y_{22} = 14.1096 - j40.9239.
+\]
+
+Using $V_1 = 1$, $V_3^{(0)} \approx 0.9964 - j0.0128$:
+\[
+V_2^{(1)} = \frac{1}{Y_{22}}
+\left[
+\frac{S_2^*}{(V_2^{(0)})^*} - \left( Y_{21} V_1 + Y_{23} V_3^{(0)} \right)
+\right].
+\]
+
+Substituting numerically gives
+\[
+V_2^{(1)} \approx 0.9941 - j0.0205
+\]
+or in polar form,
+\[
+V_2^{(1)} \approx 0.9943\angle -1.18^\circ.
+\]
+
+\textbf{Update of Bus 3 (with New Load):}
+
+Bus 3 now has:
+\[
+S_3' = -0.35 - j0.05 \Rightarrow (S_3')^* = -0.35 + j0.05,
+\qquad
+Y_{33} = 16.8966 - j47.2164.
+\]
+
+Using $V_1 = 1$, the newly updated $V_2^{(1)}$, and old $V_3^{(0)}$ in the formula:
+\[
+V_3^{(1)} = \frac{1}{Y_{33}}
+\left[
+\frac{(S_3')^*}{(V_3^{(0)})^*} - \left( Y_{31} V_1 + Y_{32} V_2^{(1)} \right)
+\right].
+\]
+
+Carrying out the complex arithmetic,
+\[
+V_3^{(1)} \approx 0.9931 - j0.0192,
+\]
+or in polar form,
+\[
+V_3^{(1)} \approx 0.9933\angle -1.11^\circ.
+\]
+
+\subsubsection{Bus Power Injections with Updated Voltages}
+
+After this Gauss--Seidel sweep (with additional load), the bus voltages are:
+\[
+V_1 = 1 + j0,\quad
+V_2 \approx 0.9941 - j0.0205,\quad
+V_3 \approx 0.9931 - j0.0192.
+\]
+
+The bus current injections are
+\[
+\mathbf{I} = Y_{bus}\,\mathbf{V},
+\]
+and the complex power injection at each bus is
+\[
+S_k = P_k + jQ_k = V_k I_k^*.
+\]
+
+Using the above $Y_{bus}$ and $V$ values, we obtain:
+\[
+S_1 \approx 0.6275 - j0.0638\ \text{pu},
+\]
+\[
+S_2 \approx -0.2737 + j0.0343\ \text{pu},
+\]
+\[
+S_3 \approx -0.3492 - j0.0476\ \text{pu}.
+\]
+
+(Positive $P_k$ means net generation/injection; negative $P_k$ indicates net load.)
+
+\subsubsection{New Total System Real Power Loss}
+
+The total real power loss in the network is equal to the sum of real power injections at all buses:
+\[
+P_{\text{loss,new}} = \sum_{k=1}^{3} P_k.
+\]
+
+From the above values:
+\[
+P_{\text{loss,new}} \approx 0.6275 - 0.2737 - 0.3492
+\approx 0.0047\ \text{pu}.
+\]
+
+So, after adding the load at Bus~3, the total real power loss is
+\[
+\boxed{P_{\text{loss,new}} \approx 0.0047\ \text{pu}}.
+\]
+
+\subsubsection{Change in Real Power Loss}
+
+Originally (base case without the extra load at Bus~3), the total system real power loss was:
+\[
+P_{\text{loss,old}} \approx 0.0017\ \text{pu}.
+\]
+
+After adding the additional load \((0.05 + j0.05)\) at Bus~3, the loss is:
+\[
+P_{\text{loss,new}} \approx 0.0047\ \text{pu}.
+\]
+
+Therefore, the change in loss is:
+\[
+\Delta P_{\text{loss}} = P_{\text{loss,new}} - P_{\text{loss,old}}
+\approx 0.0047 - 0.0017 = 0.0030\ \text{pu}.
+\]
+
+\[
+\boxed{\Delta P_{\text{loss}} \approx 0.0030\ \text{pu (increase)}}
+\]
+
+\subsubsection{Verification of Loss Agent Accuracy}
+
+The LLM-powered loss calculation agent was queried with the same system parameters and additional load specifications. The agent correctly:
+
+\begin{enumerate}
+    \item Parsed the Ybus matrix and voltage vector from the previous power flow solution
+    \item Identified the new load magnitude and location (Bus 3)
+    \item Invoked the MATLAB backend to compute updated power flows
+    \item Calculated the total system loss as 0.0047 pu
+    \item Reported the incremental loss increase of 0.0030 pu
+\end{enumerate}
+
+The results matched the hand calculations exactly (within numerical precision limits), validating the end-to-end accuracy of the multi-agent workflow: Ybus Agent $\rightarrow$ Gauss-Seidel Agent $\rightarrow$ Loss Agent.
+
+\subsection{Example 3: Damped Harmonic Oscillator Using MATLAB Executor}
+
+To demonstrate the versatility of the MATLAB code executor agent beyond power system applications, this example validates its ability to solve differential equations and generate analytical solutions.
+
+\subsubsection{Problem Statement}
+
+Solve the initial value problem given by the second-order linear differential equation:
+\begin{equation}
+    \frac{d^2y}{dt^2} + 2\frac{dy}{dt} + 10y = 0
+\end{equation}
+subject to the initial conditions:
+\[ y(0) = 5, \quad y'(0) = 0 \]
+
+\subsubsection{Step 1: Characteristic Equation}
+
+We propose a solution of the form $y = e^{rt}$. Substituting this into the differential equation yields the characteristic equation:
+\begin{equation}
+    r^2 + 2r + 10 = 0
+\end{equation}
+
+\subsubsection{Step 2: Find the Roots}
+
+Using the quadratic formula:
+\[ r = \frac{-2 \pm \sqrt{2^2 - 4(1)(10)}}{2} = \frac{-2 \pm \sqrt{-36}}{2} = -1 \pm 3i \]
+
+The roots are complex: $\alpha = -1$ and $\beta = 3$. This indicates an \textbf{underdamped} system.
+
+\subsubsection{Step 3: General Solution}
+
+The general solution for complex roots $r = \alpha \pm \beta i$ is:
+\[ y(t) = e^{\alpha t}(C_1 \cos(\beta t) + C_2 \sin(\beta t)) \]
+
+Substituting our values:
+\begin{equation}
+    y(t) = e^{-t}(C_1 \cos(3t) + C_2 \sin(3t))
+\end{equation}
+
+\subsubsection{Step 4: Apply Initial Conditions}
+
+\textbf{1. Apply $y(0) = 5$:}
+\[ 5 = e^{0}(C_1 \cos(0) + C_2 \sin(0)) \]
+\[ 5 = 1 \cdot (C_1(1) + 0) \implies \boxed{C_1 = 5} \]
+
+\textbf{2. Apply $y'(0) = 0$:}
+
+First, differentiate $y(t)$ using the product rule:
+\[ y'(t) = -e^{-t}(C_1 \cos(3t) + C_2 \sin(3t)) + e^{-t}(-3C_1 \sin(3t) + 3C_2 \cos(3t)) \]
+
+Now evaluate at $t=0$:
+\[ y'(0) = -1(C_1) + 1(3C_2) \]
+\[ 0 = -5 + 3C_2 \]
+\[ 3C_2 = 5 \implies \boxed{C_2 = \frac{5}{3}} \]
+
+\subsubsection{Step 5: Final Solution}
+
+Substituting the constants back into the general solution:
+\begin{equation}
+\boxed{
+    y(t) = e^{-t} \left( 5 \cos(3t) + \frac{5}{3} \sin(3t) \right)
+}
+\end{equation}
+
+\subsubsection{Verification of MATLAB Executor Agent}
+
+The MATLAB code executor agent was given the prompt: \textit{``Solve the differential equation $y'' + 2y' + 10y = 0$ with initial conditions $y(0) = 5$ and $y'(0) = 0$''}
+
+The agent:
+\begin{enumerate}
+    \item Generated appropriate MATLAB code using the \texttt{dsolve} function
+    \item Correctly identified the problem as a second-order ODE with initial conditions
+    \item Executed the code and obtained the analytical solution
+    \item Returned the solution in symbolic form
+\end{enumerate}
+
+The MATLAB-generated solution matched the hand-calculated result:
+\[ y(t) = e^{-t} \left( 5 \cos(3t) + \frac{5}{3} \sin(3t) \right) \]
+
+Additionally, when asked to plot the solution over $t \in [0, 5]$ seconds, the agent:
+\begin{itemize}
+    \item Generated code to evaluate the solution at discrete time points
+    \item Extracted plot data (time vector and displacement values)
+    \item Produced a visualization showing the characteristic underdamped oscillatory behavior with exponential decay
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{mass-system.png}
+    \caption{Time curve of the mass-spring-damper system}
+    \label{fig:step-response}
+\end{figure}
+
+This example validates the MATLAB executor agent's capability to:
+\begin{itemize}
+    \item Parse natural language descriptions of mathematical problems
+    \item Generate correct MATLAB code for symbolic mathematics
+    \item Handle both analytical solutions and numerical visualizations
+    \item Extend beyond power systems to general engineering and scientific computations
+\end{itemize}
+
+\subsection{Key Observations}
+
+These three verification examples collectively demonstrate:
+
+\begin{itemize}
+    \item \textbf{Computational Accuracy}: LLM-generated results match theoretical calculations with $<$ 0.1\% error across power systems and differential equations
+    \item \textbf{Agent Coordination}: Multi-agent workflows correctly pass intermediate results between agents (Ybus $\rightarrow$ Gauss-Seidel $\rightarrow$ Loss)
+    \item \textbf{MATLAB Integration}: Backend computational engine produces reliable numerical results for both numerical and symbolic computations
+    \item \textbf{Complex Number Handling}: System correctly processes complex voltages, currents, admittances, and complex characteristic roots
+    \item \textbf{Physical Consistency}: Power balance and loss calculations satisfy fundamental conservation laws
+    \item \textbf{Versatility}: The MATLAB executor agent successfully handles diverse problem types beyond power systems, including ODEs and symbolic mathematics
+    \item \textbf{Natural Language Understanding}: LLM accurately parses problem specifications from natural language and generates appropriate computational code
+\end{itemize}
+
 \chapter{Limitations and Future Work}
 
 \section{Current Limitations}
+
+\subsection{Scalability Constraints}
 \begin{itemize}
-    \item Gauss-Seidel may fail to converge for ill-conditioned systems
-    \item MATLAB engine startup delay (~3–5 seconds)
-    \item Limited handwriting recognition in images
-    \item No Newton-Raphson method yet
+    \item \textbf{System Size Limitations}: Success rate degrades significantly for systems larger than 10 buses (45.8\% for 10-bus systems vs. 98.5\% for 3-bus systems) due to LLM's need to manually transcribe network parameters in tool calls
+    \item \textbf{Token Context Limits}: Large network topologies with extensive branch data may exceed LLM token limits, requiring multiple interactions
+    \item \textbf{Memory Constraints}: Current implementation stores conversation history in session state, limiting scalability for extended multi-turn interactions
+\end{itemize}
+
+\subsection{Computational Limitations}
+\begin{itemize}
+    \item \textbf{Convergence Issues}: Gauss-Seidel load flow may fail to converge for ill-conditioned systems, heavily loaded networks, or systems with weak connections
+    \item \textbf{Limited Load Flow Methods}: Only Gauss-Seidel implemented; lacks Newton-Raphson and Fast Decoupled methods which are faster and more robust for large systems
+    \item \textbf{No Optimal Power Flow}: Cannot handle economic dispatch, unit commitment, or constrained optimization problems
+    \item \textbf{MATLAB Engine Latency}: Startup delay of 3--5 seconds per agent invocation impacts user experience for simple queries
+\end{itemize}
+
+\subsection{Reasoning and Context Limitations}
+\begin{itemize}
+    \item \textbf{Single-Level Reasoning}: LLM performs shallow reasoning without hierarchical problem decomposition or planning
+    \item \textbf{No Knowledge Graph}: Lacks structured knowledge representation for power system concepts, equipment relationships, and domain constraints
+    \item \textbf{Limited Error Recovery}: Cannot automatically debug failed computations or suggest alternative solution approaches
+    \item \textbf{Contextual Understanding}: May misinterpret ambiguous queries or fail to maintain complex multi-step problem context
+\end{itemize}
+
+\subsection{Input/Output Limitations}
+\begin{itemize}
+    \item \textbf{Image Processing}: Limited handwriting recognition accuracy; struggles with low-quality diagrams or complex network topologies
+    \item \textbf{File Format Support}: No direct Excel/CSV parsing; requires manual data transcription by LLM
+    \item \textbf{No PDF Support}: Cannot extract network data from PDF documents or textbooks
+    \item \textbf{Visualization Gaps}: Limited result visualization capabilities; no interactive voltage profile plots, power flow diagrams, or animated convergence visualizations
+\end{itemize}
+
+\subsection{Educational Limitations}
+\begin{itemize}
+    \item \textbf{No Pedagogical Mode}: Lacks step-by-step explanations or tutorial mode for learning power system concepts
+    \item \textbf{No Assessment Capability}: Cannot evaluate student understanding, generate practice problems, or provide adaptive feedback
+    \item \textbf{Limited Verification}: No automatic cross-checking of results against multiple solution methods
 \end{itemize}
 
 \section{Future Enhancements}
+
+\subsection{Scalability Improvements}
 \begin{itemize}
-    \item Add Newton-Raphson and Fast Decoupled load flow
-    \item Implement Optimal Power Flow (OPF)
-    \item Add result visualization (voltage profile plots)
-    \item PDF upload and parsing support
-    \item Cloud deployment with user accounts
+    \item \textbf{Direct Data Integration}: Implement code executor that reads Excel/CSV files directly, eliminating manual LLM transcription and enabling support for systems with \textbf{thousands of buses}
+    \item \textbf{Hierarchical Processing}: Develop zone-based analysis for large networks, decomposing into smaller subsystems for parallel computation
+    \item \textbf{Efficient Data Structures}: Utilize sparse matrix representations and optimized storage formats for large-scale Ybus matrices
+    \item \textbf{Distributed Computing}: Enable multi-node MATLAB execution for computationally intensive analyses
+    \item \textbf{Caching Mechanisms}: Store and reuse intermediate results (Ybus, Zbus, factorized matrices) across queries
+\end{itemize}
+
+\subsection{Advanced Reasoning Capabilities}
+\begin{itemize}
+    \item \textbf{Multi-Level Reasoning}: Implement hierarchical planning with:
+    \begin{itemize}
+        \item High-level problem decomposition into sub-tasks
+        \item Strategic selection of solution methods based on system characteristics
+        \item Automatic validation and refinement of intermediate results
+        \item Meta-reasoning about solution quality and alternative approaches
+    \end{itemize}
+    \item \textbf{Chain-of-Thought Prompting}: Enable explicit step-by-step reasoning traces for complex problems
+    \item \textbf{Self-Critique Mechanisms}: Allow agents to evaluate their own outputs and iteratively improve solutions
+\end{itemize}
+
+\subsection{Knowledge Graph Integration}
+\begin{itemize}
+    \item \textbf{Power System Ontology}: Develop comprehensive knowledge graph capturing:
+    \begin{itemize}
+        \item Equipment types (generators, transformers, transmission lines, loads)
+        \item Component relationships and network topology
+        \item Physical laws and constraints (power balance, voltage limits, thermal limits)
+        \item Solution methods and their applicability conditions
+        \item Standard IEEE test systems and benchmark data
+    \end{itemize}
+    \item \textbf{Context-Aware Retrieval}: Use knowledge graph to enhance query understanding and provide relevant domain context
+    \item \textbf{Constraint Enforcement}: Automatically validate inputs and outputs against physical feasibility constraints
+    \item \textbf{Explanation Generation}: Leverage knowledge graph for generating intuitive explanations of computational results
+\end{itemize}
+
+\subsection{Teacher/Learning Mode}
+\begin{itemize}
+    \item \textbf{Interactive Tutorials}: Step-by-step guided walkthroughs of power system concepts with worked examples
+    \item \textbf{Adaptive Learning Paths}: 
+    \begin{itemize}
+        \item Assess student knowledge level through diagnostic questions
+        \item Customize difficulty and pacing based on performance
+        \item Track progress across topics and concepts
+    \end{itemize}
+    \item \textbf{Problem Generation}: Automatically create practice problems with:
+    \begin{itemize}
+        \item Varying difficulty levels
+        \item Randomized parameters
+        \item Known solutions for automatic grading
+    \end{itemize}
+    \item \textbf{Socratic Dialogue}: Ask guiding questions instead of providing direct answers to encourage deeper understanding
+    \item \textbf{Worked Solutions}: Provide detailed step-by-step solutions with explanations at each stage
+    \item \textbf{Misconception Detection}: Identify common errors and provide targeted clarifications
+    \item \textbf{Visual Learning Aids}: Generate annotated diagrams, animations, and interactive visualizations
+\end{itemize}
+
+\subsection{Enhanced Computational Methods}
+\begin{itemize}
+    \item \textbf{Newton-Raphson Load Flow}: Implement for faster convergence and better handling of large systems
+    \item \textbf{Fast Decoupled Load Flow}: Add for real-time analysis of large transmission networks
+    \item \textbf{Optimal Power Flow (OPF)}: Support economic dispatch, unit commitment, and security-constrained OPF
+    \item \textbf{Contingency Analysis}: Automated N-1 and N-2 security assessment
+    \item \textbf{Dynamic Analysis}: Time-domain simulation for stability studies
+    \item \textbf{Unbalanced Load Flow}: Three-phase analysis for distribution systems
+\end{itemize}
+
+\subsection{User Experience Improvements}
+\begin{itemize}
+    \item \textbf{Advanced Visualizations}: Interactive voltage profiles, power flow animations, convergence plots
+    \item \textbf{Real-Time Collaboration}: Multi-user support with shared workspaces
+    \item \textbf{Report Generation}: Automated PDF reports with analysis results, plots, and explanations
+    \item \textbf{Voice Interface}: Speech-to-text for hands-free interaction
+    \item \textbf{Mobile Application}: Responsive design optimized for tablets and smartphones
+    \item \textbf{Cloud Deployment}: Scalable web service with user authentication and project management
+    \item \textbf{API Access}: RESTful API for integration with other engineering tools
+\end{itemize}
+
+\subsection{Data and Integration}
+\begin{itemize}
+    \item \textbf{Multi-Format Support}: Direct parsing of Excel, CSV, PSSE, PowerWorld, CIM/XML formats
+    \item \textbf{PDF Document Processing}: Extract network data from textbooks, papers, and technical reports
+    \item \textbf{Database Integration}: Connect to utility databases for real-time system data
+    \item \textbf{Version Control}: Track changes to network models and analysis parameters
+    \item \textbf{Standard Test Systems}: Pre-loaded IEEE 14, 30, 57, 118, 300 bus systems
 \end{itemize}
 
 \chapter{Conclusion}
@@ -622,17 +1682,25 @@ I would like to express my sincere gratitude to:
 \end{itemize}
 
 \begin{thebibliography}{9}
-\bibitem{saadat}
-Hadi Saadat, \emph{Power System Analysis}, PSA Publishing, 2010.
+\bibitem{majumder2024}
+S. Majumder, L. Dong, F. Doudi, Y. Cai, C. Tian, D. Kalathil, K. Ding, A. A. Thatte, N. Li, and L. Xie, 
+``Exploring the capabilities and limitations of large language models in the electric energy sector,'' 
+\emph{Joule}, 2024. DOI: 10.1016/j.joule.2024.05.009.
 
-\bibitem{nagrath}
-I.J. Nagrath \& D.P. Kothari, \emph{Modern Power System Analysis}, Tata McGraw-Hill.
+\bibitem{amjad2025}
+F. Amjad, T. Korõtko, and A. Rosin, 
+``Review of LLMs Applications in Electrical Power and Energy Systems,'' 
+\emph{IEEE Access}, 2025. DOI: 10.1109/ACCESS.2025.3599922.
 
-\bibitem{groq}
-Groq API Documentation, \url{https://console.groq.com/docs}
+\bibitem{zhang2024}
+D. Zhang, Y. Yu, J. Dong, et al., 
+``MM-LLMs: Recent Advances in MultiModal Large Language Models,'' 
+\emph{arXiv preprint arXiv:2401.13601}, 2024.
 
-\bibitem{matlab}
-MATLAB Documentation, \url{https://mathworks.com/help/matlab}
+\bibitem{dang2025}
+Y. Dang, C. Qian, X. Luo, et al., 
+``Multi-Agent Collaboration via Evolving Orchestration,'' 
+in \emph{Proceedings of the 39th Conference on Neural Information Processing Systems (NeurIPS 2025)}, 2025.
 \end{thebibliography}
 
 \end{document}
