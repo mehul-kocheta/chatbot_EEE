@@ -1,6 +1,5 @@
 # orchestrator.py
 from agents.websearch_agent import run_websearch_agent
-from agents.power_flow_agent import run_power_flow_agent
 from agents.matlab_executor_agent import run_matlab_executor_agent
 from dotenv import load_dotenv
 import os
@@ -23,7 +22,7 @@ tools = [
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["power_flow", "web_search", "matlab_executor"],
+            "enum": ["web_search", "matlab_executor"],
             "description": "The target handler for the query"
           },
           "query": {
@@ -65,12 +64,10 @@ def classify_query(user_query, image_base64=None, conversation_history=None):
                 "Use the conversation history to understand context and follow-up questions. "
                 "\n\n"
                 "Route queries as follows:\n"
-                "1. type = 'power_flow': For power flow analysis questions like solving Ybus, calculating bus voltages, "
-                "admittance matrices, or power system network analysis. Ensure all data is in the query itself.\n"
-                "2. type = 'matlab_executor': For general MATLAB programming tasks, control systems, signal processing, "
-                "plotting, simulations, or any task requiring custom MATLAB code execution. This includes transfer functions, "
-                "step responses, bode plots, state-space models, differential equations, etc.\n"
-                "3. type = 'web_search': For general knowledge questions not related to technical computation.\n"
+                "1. type = 'matlab_executor': For general MATLAB programming tasks, control systems, signal processing, "
+                "plotting, simulations, power flow analysis, or any task requiring custom MATLAB code execution. This includes transfer functions, "
+                "step responses, bode plots, state-space models, differential equations, Ybus, bus voltages, admittance matrices, etc.\n"
+                "2. type = 'web_search': For general knowledge questions not related to technical computation.\n"
                 "\n"
                 "For small talk and greetings, DO NOT call any tool - just respond naturally."
             )
@@ -88,10 +85,10 @@ def classify_query(user_query, image_base64=None, conversation_history=None):
     })
     
     respone = agent.chat.completions.create(
-        model="meta-llama/llama-4-maverick-17b-128e-instruct",
+        model="openai/gpt-oss-120b",
         messages=messages,
         tools=tools,
-        max_tokens=2000,
+        max_tokens=8000,
         stream=False
     )
     
@@ -110,16 +107,70 @@ def classify_query(user_query, image_base64=None, conversation_history=None):
             return response_content.strip(), None
         return None, None
 
-def orchestrate(user_query, image_base64=None, conversation_history=None):
-    """Orchestrate query handling with optional image support and conversation history."""
+def contextualize_matlab_query(user_query, conversation_history=None):
+    """
+    Rewrites the user's query into a standalone, data-rich MATLAB task 
+    by filling in context and tables from the conversation history.
+    """
+    if not conversation_history:
+        return user_query
+    
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are an expert MATLAB task contextualizer. "
+                "Your goal is to rewrite the user's current query into a standalone, comprehensive "
+                "instruction for a MATLAB executor agent. "
+                "\n\n"
+                "Rules:\n"
+                "1. If the user refers to data (like 'the system', 'those values', 'the table') "
+                "that was provided in previous messages, you MUST find that data and include "
+                "it explicitly in the rewritten query (e.g., as Markdown tables or lists).\n"
+                "2. If the user's query is a follow-up (e.g., 'now plot the result'), "
+                "rewrite it to include the original task context so the agent knows what to plot.\n"
+                "3. Ensure all technical parameters (bus data, line data, impedances, etc.) mentioned "
+                "previously are preserved in the rewritten prompt.\n"
+                "4. If there is an image in the history, take its description into account if relevant.\n"
+                "5. Output ONLY the rewritten prompt. No explanation or conversation."
+            )
+        }
+    ]
+    
+    # Add history
+    messages.extend(conversation_history)
+    
+    # Add current query
+    messages.append({
+        "role": "user",
+        "content": user_query
+    })
+    
+    response = agent.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=messages,
+        max_tokens=8000,
+        stream=False
+    )
+    
+    rewritten_query = response.choices[0].message.content
+    return rewritten_query.strip() if rewritten_query else user_query
+
+def orchestrate(user_query, image_base64=None, csv_files: list = None, conversation_history=None):
+    """Orchestrate query handling with optional image, multiple CSV files, and conversation history support.
+    
+    csv_files: list of dicts with keys 'path' and 'preview', one per CSV file.
+               e.g. [{"path": "/data/a.csv", "preview": "col1,col2\\n1,2\\n..."}, ...]
+    """
     answer, query = classify_query(user_query, image_base64, conversation_history)
     print(f"Classified query as: {answer}")
-    if answer == "power_flow":
-        return run_power_flow_agent(query)
-    elif answer == "web_search":
+    if answer == "web_search":
         return run_websearch_agent(query)
     elif answer == "matlab_executor":
-        return run_matlab_executor_agent(query)
+        # Fill the query with context/data from history before execution
+        contextualized_prompt = contextualize_matlab_query(user_query, conversation_history)
+        print(f"Contextualized MATLAB Prompt: {contextualized_prompt}")
+        return run_matlab_executor_agent(contextualized_prompt, csv_files)
     else:
         return answer
 

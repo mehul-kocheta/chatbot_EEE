@@ -3,6 +3,8 @@ from orchestrator import orchestrate
 import base64
 from PIL import Image
 import io
+import tempfile
+import csv
 
 # Set page config
 st.set_page_config(
@@ -56,6 +58,12 @@ if "messages" not in st.session_state:
 if "uploaded_image_bytes" not in st.session_state:
     st.session_state.uploaded_image_bytes = None
 
+# Initialize CSV state
+if "csv_path" not in st.session_state:
+    st.session_state.csv_path = None
+if "csv_preview" not in st.session_state:
+    st.session_state.csv_preview = None
+
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -89,6 +97,34 @@ elif st.session_state.uploaded_image_bytes is not None:
     preview_image = Image.open(io.BytesIO(st.session_state.uploaded_image_bytes))
     st.image(preview_image, caption="✅ Image ready to send", width=200)
 
+# CSV file uploader
+uploaded_csv = st.file_uploader(
+    "📊 Attach CSV data (optional)",
+    type=["csv"],
+    help="Upload a CSV file to use as data input for MATLAB analysis",
+    key="csv_uploader"
+)
+
+if uploaded_csv is not None:
+    # Save to a unique temp file
+    _, tmp_path = tempfile.mkstemp(suffix=".csv")
+    with open(tmp_path, "wb") as f:
+        f.write(uploaded_csv.read())
+    st.session_state.csv_path = tmp_path
+
+    # Read first 5 rows as plain-text preview
+    with open(tmp_path, "r", newline="") as f:
+        reader = csv.reader(f)
+        rows = []
+        for i, row in enumerate(reader):
+            if i >= 6:  # header + 5 data rows
+                break
+            rows.append(",".join(row))
+    st.session_state.csv_preview = "\n".join(rows)
+    st.success(f"✅ CSV ready: {uploaded_csv.name} ({len(rows)} rows preview)")
+elif st.session_state.csv_path is None:
+    st.session_state.csv_preview = None
+
 # Chat input
 prompt = st.chat_input("Ask your question here...")
 
@@ -108,6 +144,12 @@ if prompt:
         
         # Clear uploaded image after use
         st.session_state.uploaded_image_bytes = None
+    
+    # Grab CSV state and clear after use
+    csv_path = st.session_state.csv_path
+    csv_preview = st.session_state.csv_preview
+    st.session_state.csv_path = None
+    st.session_state.csv_preview = None
     
     # Prepare message content for display
     message_content = prompt
@@ -142,7 +184,8 @@ if prompt:
     # Get response
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            response = orchestrate(prompt, image_base64=image_base64, conversation_history=conversation_history)
+            csv_files = [{"path": csv_path, "preview": csv_preview}] if csv_path else None
+            response = orchestrate(prompt, image_base64=image_base64, csv_files=csv_files, conversation_history=conversation_history)
             st.markdown(response)
     
     # Add assistant response to history

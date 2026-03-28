@@ -1,8 +1,9 @@
-numpy==2.3.4
-groq==0.33.0
-ddgs==9.6.1
-pypsa==1.0.2
-matlab.engine==25.2.2
-python-dotenv==1.2.1
-streamlit==1.51.0
-Pillow>=10.0.0
+numpy
+groq
+ddgs
+pyps
+python-dotenv
+streamlit
+Pillow
+beautifulsoup4
+matplotlib

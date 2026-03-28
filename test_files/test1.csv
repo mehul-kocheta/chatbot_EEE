@@ -1,0 +1,4 @@
+Bus,Bus 1,Bus 2,Bus 3
+Bus 1,-14j,4j,10j
+Bus 2,4j,-9j,5j
+Bus 3,10j,5j,-15j
