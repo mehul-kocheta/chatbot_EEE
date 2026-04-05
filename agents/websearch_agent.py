@@ -79,30 +79,76 @@ def query_knowledge_graph(query):
     """
     Queries the Knowledge Graph API for information.
     """
-    kg_url = "http://localhost:8000/query-kg"
+    kg_url = os.environ['NEO4J_URL']
     try:
         print(f"Querying Knowledge Graph for: {query}...")
-        response = requests.post(kg_url, params={"query": query}, timeout=15)
+        response = requests.post(kg_url, params={"query": query}, timeout=200)
         if response.status_code == 200:
             return response.json()
         else:
+            print(f"Status {response.status_code}")
             return {"error": f"Status {response.status_code}"}
     except Exception as e:
+        print(e)
         return {"error": str(e)}
+
+def format_kg_relationships(kg_results, seen_relationships):
+    """
+    Groups relationships by PDF URL and formats them for the context.
+    Deduplicates using (source, relation, target, pdf_url, page_number).
+    """
+    relationships = kg_results.get('relationships', [])
+    if not relationships:
+        return ""
+    
+    url_to_rels = {}
+    for r in relationships:
+        # Create a unique key for deduplication
+        rel_key = (
+            r.get('source'), 
+            r.get('relation'), 
+            r.get('target'), 
+            r.get('pdf_url'), 
+            r.get('page_number')
+        )
+        
+        if rel_key in seen_relationships:
+            continue
+        
+        seen_relationships.add(rel_key)
+        
+        url = r.get('pdf_url', 'Unknown Source')
+        if url not in url_to_rels:
+            url_to_rels[url] = []
+        url_to_rels[url].append(r)
+    
+    if not url_to_rels:
+        return ""
+        
+    output = "Knowledge Graph Extraction (Relationships):\n"
+    for url, rels in url_to_rels.items():
+        output += f"PDF URL: {url}\n"
+        for r in rels:
+            output += f"- {r['source']} --({r['relation']})--> {r['target']}\n"
+            output += f"  Page: {r.get('page_number')}\n"
+    return output
 
 def check_search_completeness(user_query, accumulated_results):
     """
     Uses LLM to determine if gathered info is sufficient or if a new query is needed.
     """
     context = f"User Question: {user_query}\n\nGathered Information:\n"
+    seen_relationships = set()
     for i, res in enumerate(accumulated_results):
         context += f"--- Iteration {i+1} (Query: {res['query']}) ---\n"
         # Summarize web results
         web_titles = [w.get('title', 'No Title') for w in res.get('web', [])]
         context += f"Web Results: {', '.join(web_titles[:3])}\n"
         # Summarize KG results
-        kg_entities = [e.get('name') for e in res.get('kg', {}).get('entities', [])]
-        context += f"KG Entities: {', '.join(kg_entities[:5])}\n\n"
+        kg_text = format_kg_relationships(res.get('kg', {}), seen_relationships)
+        if kg_text:
+            context += kg_text + "\n"
+            print(f"Added {len(res.get('kg', {}).get('relationships', []))} KG relationships to context (Iteration {i+1}).")
 
     prompt = (
         "Based on the gathered information, is the user's question fully answered? "
@@ -132,6 +178,7 @@ def synthesize_answer_with_llm(user_query, all_iterations):
     Synthesizes the final answer using all accumulated data.
     """
     context = f"Synthesize a comprehensive answer for: {user_query}\n\n"
+    seen_relationships = set()
     for i, res in enumerate(all_iterations):
         context += f"--- Iteration {i+1} (Query: {res['query']}) ---\n"
         context += "Web Findings:\n"
@@ -139,13 +186,9 @@ def synthesize_answer_with_llm(user_query, all_iterations):
             if 'content' in w:
                 context += f"- [{w['title']}]({w['url']}): {w['content'][:1500]}\n"
         
-        kg = res.get('kg', {})
-        if 'entities' in kg or 'relationships' in kg:
-            context += "Knowledge Graph Extraction:\n"
-            entities = [f"{e['name']} ({e.get('type', 'Concept')})" for e in kg.get('entities', [])]
-            context += f"Entities: {', '.join(entities[:10])}\n"
-            rels = [f"{r['source']} --({r['relation']})--> {r['target']}" for r in kg.get('relationships', [])]
-            context += f"Relationships: {'; '.join(rels[:10])}\n"
+        kg_text = format_kg_relationships(res.get('kg', {}), seen_relationships)
+        if kg_text:
+            context += kg_text + "\n"
         context += "\n"
 
     context += (
@@ -199,4 +242,4 @@ def run_websearch_agent(user_query):
     try:
         return synthesize_answer_with_llm(user_query, all_iterations)
     except Exception as exc:
-        return f"Synthesis failed: {str(exc)}."
+        return f"Synthesis failed: {str(exc)}."

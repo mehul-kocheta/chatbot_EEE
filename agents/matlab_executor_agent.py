@@ -1,4 +1,4 @@
-import matlab.engine
+import subprocess
 import numpy as np
 import json
 import re
@@ -8,11 +8,7 @@ import logging
 from groq import Groq
 from dotenv import load_dotenv
 import base64
-from io import BytesIO, StringIO
-import matplotlib.pyplot as plt
-import matplotlib
 from dataclasses import dataclass, field
-matplotlib.use('Agg')  # Non-interactive backend
 
 load_dotenv()
 
@@ -374,7 +370,7 @@ def _serialize_artifact(step_id: str, step_output) -> str:
             np.savetxt(tmp_path, arr, delimiter=",")
         else:
             # scalar or any other type
-            with open(tmp_path, "w") as f:
+            with open(tmp_path, "w", encoding="utf-8") as f:
                 f.write(str(step_output))
 
         return os.path.abspath(tmp_path)
@@ -471,12 +467,18 @@ def _code_generator(plan: str, previous_code: str, feedback: str, csv_files: lis
         "You are a MATLAB code generator. Generate clean, executable MATLAB code "
         "that fulfills the given plan.\n\n"
         "CRITICAL RULES:\n"
-        "1. NO UI ELEMENTS: Do NOT use 'figure', 'plot', 'subplot', 'title', 'xlabel', 'ylabel', 'legend', 'grid', 'hold', or any other UI/plotting functions. The sandbox has no screen and will hang if these are called.\n"
-        "2. PLOT DATA EXTRACTION: If the plan requires a plot, you MUST set is_plot=true in the submit_matlab_code tool call. When is_plot=true, you MUST store the data in workspace variables instead of using plotting functions. Use 'x_data' (for time/frequency/horizontal axis) and 'y_data' (for amplitude/magnitude/vertical axis). For multiple plots, use 'x1', 'y1', 'x2', 'y2', etc. Optionally, set 'plot_title', 'plot_xlabel', 'plot_ylabel', and 'plot_legends' (cell array of strings) for metadata.\n"
-        "3. NO FILE I/O: Do NOT save files. Do NOT read files unless explicitly instructed via the CSV instruction.\n"
-        "4. TERMINAL OUTPUT: Print all relevant numerical results to stdout using disp() or fprintf().\n"
-        "5. STEP OUTPUT: You MUST assign the primary result of the computation to a variable named 'step_output' at the end of the script.\n"
-        "6. HARDCODE DATA: If the request contains specific values or tables, hardcode them into the script.\n\n"
+        "1. INVISIBLE PLOTTING: If the plan requires a plot, you MUST: \n"
+        "   - Create an invisible figure: fig = figure('Visible', 'off');\n"
+        "   - Use standard MATLAB plotting functions (plot, scatter, bar, etc.).\n"
+        "   - Add titles, labels, and grids to the plot for clarity.\n"
+        "   - Save the plot as 'plot.png' using: saveas(fig, 'plot.png');\n"
+        "   - Close the figure using: close(fig);\n"
+        "2. PLOT FLAG: If the code generates a plot, you MUST set is_plot=true in the submit_matlab_code tool call.\n"
+        "3. RESULTS EXPORT: You MUST save the primary numerical result to 'step_output.csv' if it is an array or matrix. Use: csvwrite('step_output.csv', step_output);\n"
+        "4. NO FILE I/O: Do NOT read or save files unless explicitly instructed (like 'plot.png' or 'step_output.csv').\n"
+        "5. TERMINAL OUTPUT: Print all relevant numerical results to stdout using disp() or fprintf().\n"
+        "6. PROCESS TERMINATION: End your script with 'exit;' to ensure the process closes.\n"
+        "7. STEP OUTPUT VARIABLE: You MUST assign the primary result to a variable named 'step_output' at the end of the script.\n\n"
         "You MUST call the submit_matlab_code tool with your code and the correct is_plot flag."
     )
 
@@ -586,189 +588,89 @@ def _reviewer(plan: str, code: str, execution_result: dict, user_prompt: str = "
 
 def _execute(matlab_code: str, is_plot: bool = False) -> dict:
     """
-    Step 3 of the MATLAB pipeline: execute MATLAB code in a matlab.engine sandbox.
-
-    Returns a dict with keys:
-        output (str)       - captured stdout
-        plots  (list[str]) - base64-encoded PNG strings (populated when is_plot=True)
-        error  (str|None)  - exception message, or None on success
+    Step 3 of the MATLAB pipeline: execute MATLAB code using subprocess.
     """
-    result: dict = {"output": "", "plots": [], "error": None}
-
-    eng = None
-    try:
-        eng = matlab.engine.start_matlab()
-        print(matlab_code)
-
-        output_buffer = StringIO()
-        eng.eval(matlab_code, nargout=0, stdout=output_buffer)
-        result["output"] = output_buffer.getvalue()
-
-        if is_plot:
-            workspace_vars = eng.eval("who", nargout=1)
-
-            # --- metadata ---
-            plot_title  = str(eng.workspace["plot_title"])  if "plot_title"  in workspace_vars else "Plot"
-            plot_xlabel = str(eng.workspace["plot_xlabel"]) if "plot_xlabel" in workspace_vars else "X"
-            plot_ylabel = str(eng.workspace["plot_ylabel"]) if "plot_ylabel" in workspace_vars else "Y"
-            plot_legends: list[str] = []
-            if "plot_legends" in workspace_vars:
-                plot_legends = [str(leg) for leg in eng.workspace["plot_legends"]]
-
-            # --- data extraction ---
-            plot_data_sets: list[dict] = []
-
-            if "x_data" in workspace_vars and "y_data" in workspace_vars:
-                x = np.array(eng.workspace["x_data"]).flatten()
-                y = np.array(eng.workspace["y_data"]).flatten()
-                plot_data_sets.append({"x": x, "y": y, "label": "Data"})
-            else:
-                idx = 1
-                while f"x{idx}" in workspace_vars and f"y{idx}" in workspace_vars:
-                    x = np.array(eng.workspace[f"x{idx}"]).flatten()
-                    y = np.array(eng.workspace[f"y{idx}"]).flatten()
-                    label = plot_legends[idx - 1] if idx - 1 < len(plot_legends) else f"Plot {idx}"
-                    plot_data_sets.append({"x": x, "y": y, "label": label})
-                    idx += 1
-
-            if not plot_data_sets:
-                common_x = ["t", "time", "x", "freq", "w"]
-                common_y = ["y", "output", "response", "mag", "magnitude"]
-                x_var = next((v for v in common_x if v in workspace_vars), None)
-                y_vars = [v for v in common_y if v in workspace_vars]
-                if x_var and y_vars:
-                    x = np.array(eng.workspace[x_var]).flatten()
-                    for y_var in y_vars:
-                        y = np.array(eng.workspace[y_var]).flatten()
-                        plot_data_sets.append({"x": x, "y": y, "label": y_var})
-
-            if plot_data_sets:
-                plt.figure(figsize=(10, 6))
-                for ds in plot_data_sets:
-                    plt.plot(ds["x"], ds["y"], label=ds["label"], linewidth=2)
-                plt.xlabel(plot_xlabel, fontsize=12)
-                plt.ylabel(plot_ylabel, fontsize=12)
-                plt.title(plot_title, fontsize=14, fontweight="bold")
-                plt.grid(True, alpha=0.3)
-                if len(plot_data_sets) > 1 or plot_legends:
-                    plt.legend()
-                buf = BytesIO()
-                plt.savefig(buf, format="png", dpi=150, bbox_inches="tight")
-                buf.seek(0)
-                result["plots"].append(base64.b64encode(buf.read()).decode("utf-8"))
-                plt.close()
-            else:
-                if result["error"] is None:
-                    result["error"] = (
-                        "Could not find plot data in MATLAB workspace. "
-                        "Ensure data is stored in variables like x_data/y_data or x1/y1, x2/y2, etc."
-                    )
-
-    except Exception as e:
-        result["error"] = str(e)
-    finally:
-        if eng is not None:
-            eng.quit()
-
-    return result
+    return _execute_and_capture(matlab_code, is_plot)
 
 
 def _execute_and_capture(matlab_code: str, is_plot: bool = False) -> dict:
     """
-    Like _execute, but additionally extracts 'step_output' from the MATLAB workspace
-    before quitting the engine.
-
-    Returns a dict with keys:
-        output      (str)       - captured stdout
-        plots       (list[str]) - base64-encoded PNG strings
-        error       (str|None)  - exception message, or None on success
-        step_output (Any|None)  - value of the MATLAB workspace variable 'step_output',
-                                  or None if absent or if an error occurred
-        warnings    (list[str]) - non-fatal warnings (e.g. step_output not found)
+    Execute MATLAB code using subprocess and capture results from files.
     """
     result: dict = {"output": "", "plots": [], "error": None, "step_output": None, "warnings": []}
 
-    eng = None
+    # Use project-level tmp directory
+    current_file = os.path.abspath(__file__)
+    chatbot_dir = os.path.dirname(os.path.dirname(current_file))
+    project_root = os.path.dirname(chatbot_dir)
+    tmp_dir = os.path.join(project_root, "tmp")
+    
+    if not os.path.exists(tmp_dir):
+        os.makedirs(tmp_dir, exist_ok=True)
+
+    # File paths for MATLAB interaction
+    script_path = os.path.join(tmp_dir, "script.m")
+    plot_path = os.path.join(tmp_dir, "plot.png")
+    csv_path = os.path.join(tmp_dir, "step_output.csv")
+
+    # Copy any CSV files needed to the tmp directory
+    csv_paths = re.findall(r"['\"]([^'\"\s]+\.csv)['\"]", matlab_code)
+    for path in csv_paths:
+        if os.path.exists(path):
+            import shutil
+            try:
+                shutil.copy(path, os.path.join(tmp_dir, os.path.basename(path)))
+            except:
+                pass # Already there or locked
+    
+    # Write the script
+    with open(script_path, "w", encoding="utf-8") as f:
+        f.write(matlab_code)
+    
     try:
-        eng = matlab.engine.start_matlab()
-        print(matlab_code)
-
-        output_buffer = StringIO()
-        eng.eval(matlab_code, nargout=0, stdout=output_buffer)
-        result["output"] = output_buffer.getvalue()
-
-        # workspace_vars is needed for both plot handling and step_output extraction
-        workspace_vars = eng.eval("who", nargout=1)
-
-        if is_plot:
-            # --- metadata ---
-            plot_title  = str(eng.workspace["plot_title"])  if "plot_title"  in workspace_vars else "Plot"
-            plot_xlabel = str(eng.workspace["plot_xlabel"]) if "plot_xlabel" in workspace_vars else "X"
-            plot_ylabel = str(eng.workspace["plot_ylabel"]) if "plot_ylabel" in workspace_vars else "Y"
-            plot_legends: list[str] = []
-            if "plot_legends" in workspace_vars:
-                plot_legends = [str(leg) for leg in eng.workspace["plot_legends"]]
-
-            # --- data extraction ---
-            plot_data_sets: list[dict] = []
-
-            if "x_data" in workspace_vars and "y_data" in workspace_vars:
-                x = np.array(eng.workspace["x_data"]).flatten()
-                y = np.array(eng.workspace["y_data"]).flatten()
-                plot_data_sets.append({"x": x, "y": y, "label": "Data"})
-            else:
-                idx = 1
-                while f"x{idx}" in workspace_vars and f"y{idx}" in workspace_vars:
-                    x = np.array(eng.workspace[f"x{idx}"]).flatten()
-                    y = np.array(eng.workspace[f"y{idx}"]).flatten()
-                    label = plot_legends[idx - 1] if idx - 1 < len(plot_legends) else f"Plot {idx}"
-                    plot_data_sets.append({"x": x, "y": y, "label": label})
-                    idx += 1
-
-            if not plot_data_sets:
-                common_x = ["t", "time", "x", "freq", "w"]
-                common_y = ["y", "output", "response", "mag", "magnitude"]
-                x_var = next((v for v in common_x if v in workspace_vars), None)
-                y_vars = [v for v in common_y if v in workspace_vars]
-                if x_var and y_vars:
-                    x = np.array(eng.workspace[x_var]).flatten()
-                    for y_var in y_vars:
-                        y = np.array(eng.workspace[y_var]).flatten()
-                        plot_data_sets.append({"x": x, "y": y, "label": y_var})
-
-            if plot_data_sets:
-                plt.figure(figsize=(10, 6))
-                for ds in plot_data_sets:
-                    plt.plot(ds["x"], ds["y"], label=ds["label"], linewidth=2)
-                plt.xlabel(plot_xlabel, fontsize=12)
-                plt.ylabel(plot_ylabel, fontsize=12)
-                plt.title(plot_title, fontsize=14, fontweight="bold")
-                plt.grid(True, alpha=0.3)
-                if len(plot_data_sets) > 1 or plot_legends:
-                    plt.legend()
-                buf = BytesIO()
-                plt.savefig(buf, format="png", dpi=150, bbox_inches="tight")
-                buf.seek(0)
-                result["plots"].append(base64.b64encode(buf.read()).decode("utf-8"))
-                plt.close()
-            else:
-                if result["error"] is None:
-                    result["error"] = (
-                        "Could not find plot data in MATLAB workspace. "
-                        "Ensure data is stored in variables like x_data/y_data or x1/y1, x2/y2, etc."
-                    )
-
-        # Extract step_output from workspace (workspace_vars already fetched above)
-        if "step_output" in workspace_vars:
-            result["step_output"] = eng.workspace["step_output"]
-        elif result["error"] is None:
-            result["warnings"].append("step_output not found in MATLAB workspace")
-
+        # Run MATLAB with cwd set to project tmp directory
+        proc = subprocess.run(
+            ["matlab", "-batch", "run('script.m');"],
+            cwd=tmp_dir,
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=600
+        )
+        result["output"] = proc.stdout
+        if proc.stderr:
+            result["output"] += "\n" + proc.stderr
+        if proc.returncode != 0:
+            result["error"] = f"MATLAB exited with return code {proc.returncode}"
+    except subprocess.TimeoutExpired:
+        result["error"] = "MATLAB execution timed out after 600 seconds."
     except Exception as e:
-        result["error"] = str(e)
-    finally:
-        if eng is not None:
-            eng.quit()
+        result["error"] = f"Subprocess error: {str(e)}"
+
+    # Capture results from the tmp directory
+    if is_plot:
+        if os.path.exists(plot_path):
+            with open(plot_path, "rb") as f:
+                result["plots"].append(base64.b64encode(f.read()).decode("utf-8"))
+        else:
+            result["warnings"].append("Expected 'plot.png' was not found.")
+    
+    if os.path.exists(csv_path):
+        try:
+            result["step_output"] = np.loadtxt(csv_path, delimiter=",")
+        except:
+            with open(csv_path, "r", encoding="utf-8") as f:
+                result["step_output"] = f.read()
+    elif result["error"] is None and not is_plot:
+        result["warnings"].append("step_output.csv not found")
+
+    # Manual cleanup of generated files
+    for p in [script_path, plot_path, csv_path]:
+        try:
+            if os.path.exists(p):
+                os.remove(p)
+        except:
+            pass # Ignore lock errors as requested
 
     return result
 
@@ -776,171 +678,23 @@ def _execute_and_capture(matlab_code: str, is_plot: bool = False) -> dict:
 def execute_matlab_calculation(matlab_code):
     """
     Execute MATLAB code for calculations (non-plotting) and return text output
-    
-    Returns:
-        dict with 'output' (text), 'error' (if any)
     """
-    result = {
-        'output': '',
-        'error': None
+    res = _execute_and_capture(matlab_code, is_plot=False)
+    return {
+        'output': res['output'],
+        'error': res['error']
     }
-    
-    try:
-        print("Starting MATLAB engine for calculations...")
-        eng = matlab.engine.start_matlab()
-        
-        # Capture output
-        from io import StringIO
-        output_buffer = StringIO()
-        
-        print("Executing MATLAB code...")
-        try:
-            eng.eval(matlab_code, nargout=0, stdout=output_buffer)
-            result['output'] = output_buffer.getvalue()
-        except Exception as eval_error:
-            result['error'] = str(eval_error)
-            print(f"MATLAB execution error: {eval_error}")
-        
-        print("Stopping MATLAB engine...")
-        eng.quit()
-        
-    except Exception as e:
-        result['error'] = f"Failed to execute MATLAB code: {str(e)}"
-        print(result['error'])
-    
-    return result
 
 def execute_matlab_for_plot_data(matlab_code):
     """
-    Execute MATLAB code to extract plot data (x, y), then use matplotlib for plotting
-    
-    The MATLAB code should store plot data in variables like:
-    - x_data, y_data (or x1, y1, x2, y2 for multiple plots)
-    - plot_title, plot_xlabel, plot_ylabel, plot_legends (optional metadata)
-    
-    Returns:
-        dict with 'output' (text), 'plots' (list of base64 encoded images), 'error' (if any)
+    Execute MATLAB code and return plot data + output.
     """
-    result = {
-        'output': '',
-        'plots': [],
-        'error': None
+    res = _execute_and_capture(matlab_code, is_plot=True)
+    return {
+        'output': res['output'],
+        'plots': res['plots'],
+        'error': res['error']
     }
-    
-    try:
-        print("Starting MATLAB engine for plot data extraction...")
-        eng = matlab.engine.start_matlab()
-        
-        # Capture output
-        from io import StringIO
-        output_buffer = StringIO()
-        
-        print("Executing MATLAB code to compute plot data...")
-        try:
-            eng.eval(matlab_code, nargout=0, stdout=output_buffer)
-            result['output'] = output_buffer.getvalue()
-            
-            # Get workspace variables
-            workspace_vars = eng.eval("who", nargout=1)
-            print(f"Workspace variables: {workspace_vars}")
-            
-            # Extract plot metadata if available
-            plot_title = "Plot"
-            plot_xlabel = "X"
-            plot_ylabel = "Y"
-            plot_legends = []
-            
-            if 'plot_title' in workspace_vars:
-                plot_title = str(eng.workspace['plot_title'])
-            if 'plot_xlabel' in workspace_vars:
-                plot_xlabel = str(eng.workspace['plot_xlabel'])
-            if 'plot_ylabel' in workspace_vars:
-                plot_ylabel = str(eng.workspace['plot_ylabel'])
-            if 'plot_legends' in workspace_vars:
-                legends_cell = eng.workspace['plot_legends']
-                plot_legends = [str(leg) for leg in legends_cell]
-            
-            # Extract plot data - look for x_data, y_data or x1, y1, x2, y2, etc.
-            plot_data_sets = []
-            
-            # Try single plot data first
-            if 'x_data' in workspace_vars and 'y_data' in workspace_vars:
-                x = np.array(eng.workspace['x_data']).flatten()
-                y = np.array(eng.workspace['y_data']).flatten()
-                plot_data_sets.append({'x': x, 'y': y, 'label': 'Data'})
-            
-            # Try numbered plot data (x1, y1, x2, y2, etc.)
-            else:
-                idx = 1
-                while f'x{idx}' in workspace_vars and f'y{idx}' in workspace_vars:
-                    x = np.array(eng.workspace[f'x{idx}']).flatten()
-                    y = np.array(eng.workspace[f'y{idx}']).flatten()
-                    label = plot_legends[idx-1] if idx-1 < len(plot_legends) else f'Plot {idx}'
-                    plot_data_sets.append({'x': x, 'y': y, 'label': label})
-                    idx += 1
-            
-            # If no standard variables found, try common patterns (t, y), (x, y), etc.
-            if not plot_data_sets:
-                common_x = ['t', 'time', 'x', 'freq', 'w']
-                common_y = ['y', 'output', 'response', 'mag', 'magnitude']
-                
-                x_var = None
-                y_vars = []
-                
-                for var in common_x:
-                    if var in workspace_vars:
-                        x_var = var
-                        break
-                
-                for var in common_y:
-                    if var in workspace_vars:
-                        y_vars.append(var)
-                
-                if x_var and y_vars:
-                    x = np.array(eng.workspace[x_var]).flatten()
-                    for y_var in y_vars:
-                        y = np.array(eng.workspace[y_var]).flatten()
-                        plot_data_sets.append({'x': x, 'y': y, 'label': y_var})
-            
-            # Create matplotlib plot
-            if plot_data_sets:
-                plt.figure(figsize=(10, 6))
-                
-                for dataset in plot_data_sets:
-                    plt.plot(dataset['x'], dataset['y'], label=dataset['label'], linewidth=2)
-                
-                plt.xlabel(plot_xlabel, fontsize=12)
-                plt.ylabel(plot_ylabel, fontsize=12)
-                plt.title(plot_title, fontsize=14, fontweight='bold')
-                plt.grid(True, alpha=0.3)
-                
-                if len(plot_data_sets) > 1 or plot_legends:
-                    plt.legend()
-                
-                # Convert to base64
-                buffer = BytesIO()
-                plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
-                buffer.seek(0)
-                plot_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-                result['plots'].append(plot_base64)
-                plt.close()
-                
-                print(f"Successfully created plot with {len(plot_data_sets)} dataset(s)")
-            else:
-                result['error'] = "Could not find plot data in MATLAB workspace. Please ensure data is stored in variables like x_data, y_data or x1, y1, x2, y2, etc."
-            
-        except Exception as eval_error:
-            result['error'] = str(eval_error)
-            print(f"MATLAB execution error: {eval_error}")
-        
-        print("Stopping MATLAB engine...")
-        eng.quit()
-        
-    except Exception as e:
-        result['error'] = f"Failed to execute MATLAB code: {str(e)}"
-        print(result['error'])
-    
-    return result
 
 def run_matlab_executor_agent(user_prompt, csv_files: list = None):
     """

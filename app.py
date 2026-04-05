@@ -113,7 +113,7 @@ if uploaded_csv is not None:
     st.session_state.csv_path = tmp_path
 
     # Read first 5 rows as plain-text preview
-    with open(tmp_path, "r", newline="") as f:
+    with open(tmp_path, "r", newline="", encoding="utf-8") as f:
         reader = csv.reader(f)
         rows = []
         for i, row in enumerate(reader):

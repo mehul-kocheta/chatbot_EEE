@@ -141,8 +141,10 @@ def main():
     
     results = []
     for i, q in enumerate(questions):
+        # Use a safe way to print potential non-ASCII characters on Windows terminals
+        safe_q = q.encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
         print(f"\n--- Processing Q{i+1}/10 ---")
-        print(f"Question: {q}")
+        print(f"Question: {safe_q}")
         try:
             # Call the agent
             response = run_matlab_executor_agent(q)
@@ -156,7 +158,8 @@ def main():
                 # Some agents might fail or produce pure text, we try to append at least the question
                 # or just skip if we want a clean grid.
         except Exception as e:
-            print(f"Error calling agent for Q{i+1}: {e}")
+            error_msg = str(e).encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
+            print(f"Error calling agent for Q{i+1}: {error_msg}")
             
     if results:
         create_grid(results)

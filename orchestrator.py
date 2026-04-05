@@ -64,7 +64,7 @@ def classify_query(user_query, image_base64=None, conversation_history=None):
                 "Use the conversation history to understand context and follow-up questions. "
                 "\n\n"
                 "Route queries as follows:\n"
-                "1. type = 'matlab_executor': For general MATLAB programming tasks, control systems, signal processing, "
+                "1. type = 'matlab_executor': For general MATLAB programming tasks, like any kind of calcuations to be performed, "
                 "plotting, simulations, power flow analysis, or any task requiring custom MATLAB code execution. This includes transfer functions, "
                 "step responses, bode plots, state-space models, differential equations, Ybus, bus voltages, admittance matrices, etc.\n"
                 "2. type = 'web_search': For general knowledge questions not related to technical computation.\n"
@@ -187,7 +187,9 @@ def main():
             result = orchestrate(user_query)
             print(f"Response: {result}\n")
         except Exception as e:
-            print(f"Error: {str(e)}")
+            import sys
+            error_msg = str(e).encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
+            print(f"Error: {error_msg}")
 
 if __name__ == "__main__":
     main()
